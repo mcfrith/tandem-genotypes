@@ -1,0 +1,189 @@
+#! /usr/bin/env python
+# Copyright 2018 Martin C. Frith
+
+import bisect
+import gzip
+import itertools
+import optparse
+import signal
+import sys
+
+def myOpen(fileName):  # faster than fileinput
+    if fileName == "-":
+        return sys.stdin
+    if fileName.endswith(".gz"):
+        return gzip.open(fileName)
+    return open(fileName)
+
+def exonsFromLines(lines):
+    for line in lines:
+        fields = line.split()
+        chrom = fields[2]
+        exonBegs = fields[9].rstrip(",").split(",")
+        exonEnds = fields[10].rstrip(",").split(",")
+        if len(fields) > 12:
+            geneName = fields[12]
+        else:
+            geneName = fields[0]
+        for beg, end in zip(exonBegs, exonEnds):
+            yield chrom, int(beg), int(end), geneName
+
+def genesThatOverlapMe(queryRange, sortedExons, maxExonLength):
+    chrom, beg, end = queryRange
+    i = bisect.bisect(sortedExons, queryRange)
+    j = i
+    while j > 0:
+        j -= 1
+        chrom0, beg0, end0, geneName = sortedExons[j]
+        if chrom0 < chrom or beg0 + maxExonLength <= beg:
+            break
+        if end0 > beg:
+            yield geneName
+    while i < len(sortedExons):
+        chrom0, beg0, end0, geneName = sortedExons[i]
+        if chrom0 > chrom or beg0 >= end:
+            break
+        yield geneName
+        i += 1
+
+def tandemRepeatsFromLines(lines, sortedExons):
+    maxExonLength = 0
+    if sortedExons:
+        maxExonLength = max(i[2] - i[1] for i in sortedExons)
+    for line in lines:
+        fields = line.split()
+        if len(fields) == 5:  # microsat.txt
+            repeatCount, unit = fields[4].split("x")
+            chrom = fields[1]
+            beg = int(fields[2])
+            end = int(fields[3])
+        elif len(fields) == 17 and fields[4] == "trf":  # simpleRepeat.txt
+            unit = fields[16]
+            if int(fields[5]) != len(unit) or int(fields[7]) != len(unit):
+                continue  # weird, maybe hard case: don't try it
+            chrom = fields[1]
+            beg = int(fields[2])
+            end = int(fields[3])
+        elif len(fields) == 17 and fields[11] == "Simple_repeat":  # rmsk.txt
+            unit = fields[10][1:-2]
+            chrom = fields[5]
+            beg = int(fields[6])
+            end = int(fields[7])
+        elif len(fields) == 15 and fields[10] == "Simple_repeat":  # RMSK .out
+            unit = fields[9][1:-2]
+            chrom = fields[4]
+            beg = int(fields[5]) - 1
+            end = int(fields[6])
+        else:
+            continue
+        if len(set(unit)) == 1:
+            continue  # don't try homo-polymers
+        if sortedExons is None:
+            geneNames = ["."]
+        else:
+            r = chrom, beg, end
+            geneNames = sorted(set(genesThatOverlapMe(r, sortedExons,
+                                                      maxExonLength)))
+            if not geneNames:
+                continue
+        yield chrom, beg, end, unit, geneNames, []
+
+def containedRanges(queryRanges, containingRange):
+    chrom, beg, end = containingRange
+    i = bisect.bisect(queryRanges, containingRange)
+    while i < len(queryRanges):
+        r = queryRanges[i]
+        chrom0, beg0, end0 = r[:3]
+        if chrom0 > chrom or beg0 >= end:
+            break
+        if beg0 > beg and end0 < end:
+            yield r
+        i += 1
+
+def gapsFromPairwiseAlignment(rPos, rSeq, qSeq):
+    # uses "read-ahead" technique, aiming to be as fast as possible
+    alignmentColumns = itertools.izip(rSeq, qSeq)
+    for x, y in alignmentColumns: break
+    while True:
+        size = 1
+        if x == "-":
+            for x, y in alignmentColumns:
+                if x != "-": break
+                size += 1
+            else: return
+            yield rPos, rPos, size  # insertion
+        elif y == "-":
+            for x, y in alignmentColumns:
+                if y != "-": break
+                size += 1
+            else: return
+            yield rPos, rPos + size, -size  # deletion
+            rPos += size
+        else:
+            for x, y in alignmentColumns:
+                if x == "-" or y == "-": break
+                size += 1
+            else: return
+            rPos += size
+
+def numberOfPeriods(gapLength, repeatPeriod):  # crude
+    if gapLength < 0:
+        return -numberOfPeriods(-gapLength, repeatPeriod)
+    return (gapLength + (repeatPeriod - 1) // 2) // repeatPeriod
+
+def appendCopyNumberChanges(tandemRepeats, gaps):
+    for chrom, beg, end, unit, geneNames, copyNumberChanges in tandemRepeats:
+        period = len(unit)
+        diff = 0
+        for gapBeg, gapEnd, gapLen in gaps:
+            if gapEnd > beg and gapBeg < end:
+                diff += numberOfPeriods(gapLen, period)
+        copyNumberChanges.append(diff)
+
+def doOneMafFile(tandemRepeats, lines):
+    chrom = None
+    for line in lines:
+        if line[0] == "s":
+            fields = line.split()
+            if chrom is None:
+                chrom = fields[1]
+                beg = int(fields[2])
+                rSeq = fields[6]
+                end = beg + len(rSeq) - rSeq.count("-")
+            else:
+                alignmentRange = chrom, beg, end
+                reps = list(containedRanges(tandemRepeats, alignmentRange))
+                if reps:
+                    qSeq = fields[6]
+                    gaps = list(gapsFromPairwiseAlignment(beg, rSeq, qSeq))
+                    appendCopyNumberChanges(reps, gaps)
+                chrom = None
+
+def tandemGenotypes(opts, args):
+    exons = sorted(exonsFromLines(myOpen(opts.genes))) if opts.genes else None
+    tandemRepeats = sorted(tandemRepeatsFromLines(myOpen(args[0]), exons))
+
+    if len(args) > 1:
+        for fileName in args[1:]:
+            doOneMafFile(tandemRepeats, myOpen(fileName))
+    else:
+        doOneMafFile(tandemRepeats, sys.stdin)
+
+    for chrom, beg, end, unit, geneNames, copyNumberChanges in tandemRepeats:
+        if copyNumberChanges and any(i != 0 for i in copyNumberChanges):
+            changes = " ".join("%3d" % i for i in sorted(copyNumberChanges))
+            out = chrom, str(beg), str(end), unit, ",".join(geneNames), changes
+            print "\t".join(out)
+
+if __name__ == "__main__":
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # avoid silly error message
+    usage = "%prog [options] microsat.txt alignments.maf"
+    description = "Try to indicate genotypes of tandem repeats."
+    op = optparse.OptionParser(usage=usage, description=description)
+    op.add_option("-g", "--genes", metavar="FILE", help=
+                  "only check tandem repeats that overlap exons of genes "
+                  "in a genePred file")
+    opts, args = op.parse_args()
+    if not args:
+        op.error("please give me repeats and MAF alignments")
+    tandemGenotypes(opts, args)
