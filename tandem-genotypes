@@ -100,31 +100,40 @@ def containedRanges(queryRanges, containingRange):
             yield r
         i += 1
 
-def gapsFromPairwiseAlignment(rPos, rSeq, qSeq):
-    # uses "read-ahead" technique, aiming to be as fast as possible
-    alignmentColumns = itertools.izip(rSeq, qSeq)
-    for x, y in alignmentColumns: break
-    while True:
-        size = 1
-        if x == "-":
-            for x, y in alignmentColumns:
-                if x != "-": break
-                size += 1
-            else: return
-            yield rPos, rPos, size  # insertion
-        elif y == "-":
-            for x, y in alignmentColumns:
-                if y != "-": break
-                size += 1
-            else: return
-            yield rPos, rPos + size, -size  # deletion
-            rPos += size
-        else:
-            for x, y in alignmentColumns:
-                if x == "-" or y == "-": break
-                size += 1
-            else: return
-            rPos += size
+def gapsFromColinearAlignments(alignments):
+    topSeqPos = alignments[0][0][2]
+    insSize = delSize = 0
+    for j, b in enumerate(alignments):
+        if j:
+            a = alignments[j - 1]
+            delSize += b[0][2] - a[0][3]
+            insSize += b[1][2] - a[1][3]
+        alignmentColumns = itertools.izip(b[0][4], b[1][4])
+        # use "read-ahead" technique, aiming to be as fast as possible:
+        for x, y in alignmentColumns: break
+        while True:
+            if x == "-":
+                insSize += 1
+                for x, y in alignmentColumns:
+                    if x != "-": break
+                    insSize += 1
+                else: break
+            elif y == "-":
+                delSize += 1
+                for x, y in alignmentColumns:
+                    if y != "-": break
+                    delSize += 1
+                else: break
+            else:
+                if insSize or delSize:
+                    yield topSeqPos, topSeqPos + delSize, insSize - delSize
+                    topSeqPos += delSize
+                    insSize = delSize = 0
+                topSeqPos += 1
+                for x, y in alignmentColumns:
+                    if x == "-" or y == "-": break
+                    topSeqPos += 1
+                else: break
 
 def numberOfPeriods(gapLength, repeatPeriod):  # crude
     if gapLength < 0:
@@ -136,28 +145,62 @@ def appendCopyNumberChanges(tandemRepeats, gaps):
         period = len(unit)
         diff = 0
         for gapBeg, gapEnd, gapLen in gaps:
-            if gapEnd > beg and gapBeg < end:
+            if gapBeg < beg and gapEnd > beg:
+                break  # a deletion goes beyond the repeat: give up
+            if gapBeg < end and gapEnd > end:
+                break  # a deletion goes beyond the repeat: give up
+            if gapBeg >= beg and gapEnd <= end:
                 diff += numberOfPeriods(gapLen, period)
-        copyNumberChanges.append(diff)
+        else:
+            copyNumberChanges.append(diff)
+
+def isFwdColinear(oldAln, newAln):
+    """Is oldAln upstream of newAln in all sequences?"""
+    return all(i[3] <= j[2] for i, j in zip(oldAln, newAln))
+
+def isColinear(colinearAlignments, newAln):
+    oldAln = colinearAlignments[-1]
+    if any(i[:2] != j[:2] for i, j in zip(oldAln, newAln)):
+        return False
+    if len(colinearAlignments) == 1:
+        return isFwdColinear(oldAln, newAln) or isFwdColinear(newAln, oldAln)
+    if isFwdColinear(colinearAlignments[0], colinearAlignments[1]):
+        return isFwdColinear(oldAln, newAln)
+    else:
+        return isFwdColinear(newAln, oldAln)
+
+def doColinearAlignments(tandemRepeats, alignments):
+    if len(alignments) > 1 and isFwdColinear(alignments[1], alignments[0]):
+        alignments.reverse()
+    head = alignments[0]
+    tail = alignments[-1]
+    alignmentRange = head[0][0], head[0][2], tail[0][3]
+    reps = list(containedRanges(tandemRepeats, alignmentRange))
+    if reps:
+        gaps = list(gapsFromColinearAlignments(alignments))
+        appendCopyNumberChanges(reps, gaps)
 
 def doOneMafFile(tandemRepeats, lines):
-    chrom = None
+    alignments = []
+    newAln = []
     for line in lines:
         if line[0] == "s":
             fields = line.split()
-            if chrom is None:
-                chrom = fields[1]
-                beg = int(fields[2])
-                rSeq = fields[6]
-                end = beg + len(rSeq) - rSeq.count("-")
-            else:
-                alignmentRange = chrom, beg, end
-                reps = list(containedRanges(tandemRepeats, alignmentRange))
-                if reps:
-                    qSeq = fields[6]
-                    gaps = list(gapsFromPairwiseAlignment(beg, rSeq, qSeq))
-                    appendCopyNumberChanges(reps, gaps)
-                chrom = None
+            seqName = fields[1]
+            beg = int(fields[2])
+            strand = fields[4]
+            alignedSeq = fields[6]
+            end = beg + len(alignedSeq) - alignedSeq.count("-")
+            seqData = seqName, strand, beg, end, alignedSeq
+            newAln.append(seqData)
+        elif line.isspace():
+            if alignments and not isColinear(alignments, newAln):
+                doColinearAlignments(tandemRepeats, alignments)
+                alignments = []
+            alignments.append(newAln)
+            newAln = []
+    if alignments:
+        doColinearAlignments(tandemRepeats, alignments)
 
 def tandemGenotypes(opts, args):
     exons = sorted(exonsFromLines(myOpen(opts.genes))) if opts.genes else None
