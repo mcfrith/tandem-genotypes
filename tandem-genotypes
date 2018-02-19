@@ -124,25 +124,34 @@ def isFwdColinear(oldAln, newAln):
     """Is oldAln upstream of newAln in all sequences?"""
     return all(i[3] <= j[2] for i, j in zip(oldAln, newAln))
 
+def isFwd(colinearAlignments):
+    return isFwdColinear(colinearAlignments[0], colinearAlignments[1])
+
 def isColinear(colinearAlignments, newAln):
     oldAln = colinearAlignments[-1]
     if any(i[:2] != j[:2] for i, j in zip(oldAln, newAln)):
         return False
     if len(colinearAlignments) == 1:
         return isFwdColinear(oldAln, newAln) or isFwdColinear(newAln, oldAln)
-    if isFwdColinear(colinearAlignments[0], colinearAlignments[1]):
+    if isFwd(colinearAlignments):
         return isFwdColinear(oldAln, newAln)
     else:
         return isFwdColinear(newAln, oldAln)
+
+def canonicalize(colinearAlignments):
+    if len(colinearAlignments) > 1 and not isFwd(colinearAlignments):
+        colinearAlignments.reverse()
 
 def colinearAlignmentGroups(alignments):
     colinearAlignments = []
     for i in alignments:
         if colinearAlignments and not isColinear(colinearAlignments, i):
+            canonicalize(colinearAlignments)
             yield colinearAlignments
             colinearAlignments = []
         colinearAlignments.append(i)
     if colinearAlignments:
+        canonicalize(colinearAlignments)
         yield colinearAlignments
 
 def gapsFromColinearAlignments(alignments):
@@ -199,8 +208,6 @@ def appendCopyNumberChange(tandemRepeat, gaps):
     copyNumberChanges.append(diff)
 
 def doColinearAlignments(tandemRepeats, alignments):
-    if len(alignments) > 1 and isFwdColinear(alignments[1], alignments[0]):
-        alignments.reverse()
     head = alignments[0]
     tail = alignments[-1]
     alignmentRange = head[0][0], head[0][2], tail[0][3]
@@ -210,9 +217,18 @@ def doColinearAlignments(tandemRepeats, alignments):
         for i in reps:
             appendCopyNumberChange(i, gaps)
 
-def doOneMafFile(tandemRepeats, lines):
-    for i in colinearAlignmentGroups(alignmentsFromMaf(lines)):
+def doOneQuerySequence(tandemRepeats, alignments):
+    alignments = list(colinearAlignmentGroups(alignments))
+    for i in alignments:
         doColinearAlignments(tandemRepeats, i)
+
+def querySequenceName(alignment):
+    return alignment[1][0]
+
+def doOneMafFile(tandemRepeats, lines):
+    alignments = alignmentsFromMaf(lines)
+    for k, v in itertools.groupby(alignments, querySequenceName):
+        doOneQuerySequence(tandemRepeats, v)
 
 def tandemGenotypes(opts, args):
     exons = sorted(exonsFromLines(myOpen(opts.genes))) if opts.genes else None
