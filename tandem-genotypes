@@ -15,6 +15,27 @@ def myOpen(fileName):  # faster than fileinput
         return gzip.open(fileName)
     return open(fileName)
 
+def maxRangeLength(ranges):
+    return max(i[2] - i[1] for i in ranges) if ranges else 0
+
+def overlappingRanges(queryRange, sortedRanges, maxSortedRangeLength):
+    chrom, beg, end = queryRange
+    i = bisect.bisect(sortedRanges, queryRange)
+    j = i
+    while j > 0:
+        j -= 1
+        chrom0, beg0, end0 = sortedRanges[j][:3]
+        if chrom0 < chrom or beg0 + maxSortedRangeLength <= beg:
+            break
+        if end0 > beg:
+            yield j
+    while i < len(sortedRanges):
+        chrom0, beg0, end0 = sortedRanges[i][:3]
+        if chrom0 > chrom or beg0 >= end:
+            break
+        yield i
+        i += 1
+
 def exonsFromLines(lines):
     for line in lines:
         fields = line.split()
@@ -28,28 +49,8 @@ def exonsFromLines(lines):
         for beg, end in zip(exonBegs, exonEnds):
             yield chrom, int(beg), int(end), geneName
 
-def genesThatOverlapMe(queryRange, sortedExons, maxExonLength):
-    chrom, beg, end = queryRange
-    i = bisect.bisect(sortedExons, queryRange)
-    j = i
-    while j > 0:
-        j -= 1
-        chrom0, beg0, end0, geneName = sortedExons[j]
-        if chrom0 < chrom or beg0 + maxExonLength <= beg:
-            break
-        if end0 > beg:
-            yield geneName
-    while i < len(sortedExons):
-        chrom0, beg0, end0, geneName = sortedExons[i]
-        if chrom0 > chrom or beg0 >= end:
-            break
-        yield geneName
-        i += 1
-
 def tandemRepeatsFromLines(lines, sortedExons):
-    maxExonLength = 0
-    if sortedExons:
-        maxExonLength = max(i[2] - i[1] for i in sortedExons)
+    maxExonLength = maxRangeLength(sortedExons)
     for line in lines:
         fields = line.split()
         if len(fields) == 5:  # microsat.txt
@@ -82,8 +83,8 @@ def tandemRepeatsFromLines(lines, sortedExons):
             geneNames = ["."]
         else:
             r = chrom, beg, end
-            geneNames = sorted(set(genesThatOverlapMe(r, sortedExons,
-                                                      maxExonLength)))
+            exonNums = overlappingRanges(r, sortedExons, maxExonLength)
+            geneNames = sorted(set(sortedExons[i][3] for i in exonNums))
             if not geneNames:
                 continue
         yield chrom, beg, end, unit, geneNames, []
@@ -184,19 +185,18 @@ def numberOfPeriods(gapLength, repeatPeriod):  # crude
         return -numberOfPeriods(-gapLength, repeatPeriod)
     return (gapLength + (repeatPeriod - 1) // 2) // repeatPeriod
 
-def appendCopyNumberChanges(tandemRepeats, gaps):
-    for chrom, beg, end, unit, geneNames, copyNumberChanges in tandemRepeats:
-        period = len(unit)
-        diff = 0
-        for gapBeg, gapEnd, gapLen in gaps:
-            if gapBeg < beg and gapEnd > beg:
-                break  # a deletion goes beyond the repeat: give up
-            if gapBeg < end and gapEnd > end:
-                break  # a deletion goes beyond the repeat: give up
-            if gapBeg >= beg and gapEnd <= end:
-                diff += numberOfPeriods(gapLen, period)
-        else:
-            copyNumberChanges.append(diff)
+def appendCopyNumberChange(tandemRepeat, gaps):
+    chrom, beg, end, unit, geneNames, copyNumberChanges = tandemRepeat
+    period = len(unit)
+    diff = 0
+    for gapBeg, gapEnd, gapLen in gaps:
+        if gapBeg < beg and gapEnd > beg:
+            return  # a deletion goes beyond the repeat: give up
+        if gapBeg < end and gapEnd > end:
+            return  # a deletion goes beyond the repeat: give up
+        if gapBeg >= beg and gapEnd <= end:
+            diff += numberOfPeriods(gapLen, period)
+    copyNumberChanges.append(diff)
 
 def doColinearAlignments(tandemRepeats, alignments):
     if len(alignments) > 1 and isFwdColinear(alignments[1], alignments[0]):
@@ -207,7 +207,8 @@ def doColinearAlignments(tandemRepeats, alignments):
     reps = list(containedRanges(tandemRepeats, alignmentRange))
     if reps:
         gaps = list(gapsFromColinearAlignments(alignments))
-        appendCopyNumberChanges(reps, gaps)
+        for i in reps:
+            appendCopyNumberChange(i, gaps)
 
 def doOneMafFile(tandemRepeats, lines):
     for i in colinearAlignmentGroups(alignmentsFromMaf(lines)):
