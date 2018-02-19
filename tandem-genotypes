@@ -195,18 +195,18 @@ def appendCopyNumberChange(tandemRepeat, gaps):
             diff += numberOfPeriods(gapLen, period)
     copyNumberChanges.append(diff)
 
-def alignmentNumsPerRepeat(repNumsPerAln, repNum):
-    for i, x in enumerate(repNumsPerAln):
+def joinedAlnNumsPerRepeat(repNumsPerJoinedAln, repNum):
+    for i, x in enumerate(repNumsPerJoinedAln):
         if repNum in x:
             yield i
 
-def doOneRepeat(tandemRepeats, alignments, gaps, repNumsPerAln, repNum):
-    alnNums = list(alignmentNumsPerRepeat(repNumsPerAln, repNum))
+def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
+    joinedAlnNums = list(joinedAlnNumsPerRepeat(repNumsPerJoinedAln, repNum))
     rep = tandemRepeats[repNum]
     repBeg = rep[1]
     repEnd = rep[2]
-    for i in alnNums:
-        x = alignments[i]
+    for i in joinedAlnNums:
+        x = joinedAlns[i]
         headAln = x[0]
         tailAln = x[-1]
         headBeg = headAln[0][2]
@@ -214,26 +214,26 @@ def doOneRepeat(tandemRepeats, alignments, gaps, repNumsPerAln, repNum):
         if headBeg < repBeg and tailEnd > repEnd:
             appendCopyNumberChange(rep, gaps[i])
 
-def repeatNumsPerAlignment(tandemRepeats, maxRepeatLength, alignments):
-    for i in alignments:
-        headAln = i[0]
-        tailAln = i[-1]
+def repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns):
+    for joinedAln in joinedAlns:
+        headAln = joinedAln[0]
+        tailAln = joinedAln[-1]
         alignmentRange = headAln[0][0], headAln[0][2], tailAln[0][3]
         r = overlappingRanges(alignmentRange, tandemRepeats, maxRepeatLength)
         yield set(r)
 
-def gapsPerAlignment(alignments, isNeeded):
-    for i, j in zip(alignments, isNeeded):
+def gapsPerJoinedAln(joinedAlns, isNeeded):
+    for i, j in zip(joinedAlns, isNeeded):
         yield list(gapsFromColinearAlignments(i)) if j else None
 
 def doOneQuerySequence(tandemRepeats, maxRepeatLength, alignments):
-    alignments = list(colinearAlignmentGroups(alignments))
-    repNumsPerAln = list(repeatNumsPerAlignment(tandemRepeats, maxRepeatLength,
-                                                alignments))
-    gaps = list(gapsPerAlignment(alignments, repNumsPerAln))
-    repNums = set(itertools.chain.from_iterable(repNumsPerAln))
-    for repNum in repNums:
-        doOneRepeat(tandemRepeats, alignments, gaps, repNumsPerAln, repNum)
+    joinedAlns = list(colinearAlignmentGroups(alignments))
+    g = repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns)
+    repNumsPerJoinedAln = list(g)
+    gaps = list(gapsPerJoinedAln(joinedAlns, repNumsPerJoinedAln))
+    repNums = set(itertools.chain.from_iterable(repNumsPerJoinedAln))
+    for i in repNums:
+        doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, i)
 
 def querySequenceName(alignment):
     return alignment[1][0]
