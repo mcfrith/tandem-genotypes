@@ -100,6 +100,50 @@ def containedRanges(queryRanges, containingRange):
             yield r
         i += 1
 
+def alignmentsFromMaf(lines):
+    alignment = []
+    for line in lines:
+        if line[0] == "s":
+            fields = line.split()
+            seqName = fields[1]
+            beg = int(fields[2])
+            strand = fields[4]
+            alignedSeq = fields[6]
+            end = beg + len(alignedSeq) - alignedSeq.count("-")
+            seqData = seqName, strand, beg, end, alignedSeq
+            alignment.append(seqData)
+        elif line.isspace():
+            if alignment:
+                yield alignment
+                alignment = []
+    if alignment:
+        yield alignment
+
+def isFwdColinear(oldAln, newAln):
+    """Is oldAln upstream of newAln in all sequences?"""
+    return all(i[3] <= j[2] for i, j in zip(oldAln, newAln))
+
+def isColinear(colinearAlignments, newAln):
+    oldAln = colinearAlignments[-1]
+    if any(i[:2] != j[:2] for i, j in zip(oldAln, newAln)):
+        return False
+    if len(colinearAlignments) == 1:
+        return isFwdColinear(oldAln, newAln) or isFwdColinear(newAln, oldAln)
+    if isFwdColinear(colinearAlignments[0], colinearAlignments[1]):
+        return isFwdColinear(oldAln, newAln)
+    else:
+        return isFwdColinear(newAln, oldAln)
+
+def colinearAlignmentGroups(alignments):
+    colinearAlignments = []
+    for i in alignments:
+        if colinearAlignments and not isColinear(colinearAlignments, i):
+            yield colinearAlignments
+            colinearAlignments = []
+        colinearAlignments.append(i)
+    if colinearAlignments:
+        yield colinearAlignments
+
 def gapsFromColinearAlignments(alignments):
     topSeqPos = alignments[0][0][2]
     insSize = delSize = 0
@@ -154,21 +198,6 @@ def appendCopyNumberChanges(tandemRepeats, gaps):
         else:
             copyNumberChanges.append(diff)
 
-def isFwdColinear(oldAln, newAln):
-    """Is oldAln upstream of newAln in all sequences?"""
-    return all(i[3] <= j[2] for i, j in zip(oldAln, newAln))
-
-def isColinear(colinearAlignments, newAln):
-    oldAln = colinearAlignments[-1]
-    if any(i[:2] != j[:2] for i, j in zip(oldAln, newAln)):
-        return False
-    if len(colinearAlignments) == 1:
-        return isFwdColinear(oldAln, newAln) or isFwdColinear(newAln, oldAln)
-    if isFwdColinear(colinearAlignments[0], colinearAlignments[1]):
-        return isFwdColinear(oldAln, newAln)
-    else:
-        return isFwdColinear(newAln, oldAln)
-
 def doColinearAlignments(tandemRepeats, alignments):
     if len(alignments) > 1 and isFwdColinear(alignments[1], alignments[0]):
         alignments.reverse()
@@ -181,26 +210,8 @@ def doColinearAlignments(tandemRepeats, alignments):
         appendCopyNumberChanges(reps, gaps)
 
 def doOneMafFile(tandemRepeats, lines):
-    alignments = []
-    newAln = []
-    for line in lines:
-        if line[0] == "s":
-            fields = line.split()
-            seqName = fields[1]
-            beg = int(fields[2])
-            strand = fields[4]
-            alignedSeq = fields[6]
-            end = beg + len(alignedSeq) - alignedSeq.count("-")
-            seqData = seqName, strand, beg, end, alignedSeq
-            newAln.append(seqData)
-        elif line.isspace():
-            if alignments and not isColinear(alignments, newAln):
-                doColinearAlignments(tandemRepeats, alignments)
-                alignments = []
-            alignments.append(newAln)
-            newAln = []
-    if alignments:
-        doColinearAlignments(tandemRepeats, alignments)
+    for i in colinearAlignmentGroups(alignmentsFromMaf(lines)):
+        doColinearAlignments(tandemRepeats, i)
 
 def tandemGenotypes(opts, args):
     exons = sorted(exonsFromLines(myOpen(opts.genes))) if opts.genes else None
