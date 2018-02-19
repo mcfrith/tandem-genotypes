@@ -89,18 +89,6 @@ def tandemRepeatsFromLines(lines, sortedExons):
                 continue
         yield chrom, beg, end, unit, geneNames, []
 
-def containedRanges(queryRanges, containingRange):
-    chrom, beg, end = containingRange
-    i = bisect.bisect(queryRanges, containingRange)
-    while i < len(queryRanges):
-        r = queryRanges[i]
-        chrom0, beg0, end0 = r[:3]
-        if chrom0 > chrom or beg0 >= end:
-            break
-        if beg0 > beg and end0 < end:
-            yield r
-        i += 1
-
 def alignmentsFromMaf(lines):
     alignment = []
     for line in lines:
@@ -207,38 +195,64 @@ def appendCopyNumberChange(tandemRepeat, gaps):
             diff += numberOfPeriods(gapLen, period)
     copyNumberChanges.append(diff)
 
-def doColinearAlignments(tandemRepeats, alignments):
-    head = alignments[0]
-    tail = alignments[-1]
-    alignmentRange = head[0][0], head[0][2], tail[0][3]
-    reps = list(containedRanges(tandemRepeats, alignmentRange))
-    if reps:
-        gaps = list(gapsFromColinearAlignments(alignments))
-        for i in reps:
-            appendCopyNumberChange(i, gaps)
+def alignmentNumsPerRepeat(repNumsPerAln, repNum):
+    for i, x in enumerate(repNumsPerAln):
+        if repNum in x:
+            yield i
 
-def doOneQuerySequence(tandemRepeats, alignments):
-    alignments = list(colinearAlignmentGroups(alignments))
+def doOneRepeat(tandemRepeats, alignments, gaps, repNumsPerAln, repNum):
+    alnNums = list(alignmentNumsPerRepeat(repNumsPerAln, repNum))
+    rep = tandemRepeats[repNum]
+    repBeg = rep[1]
+    repEnd = rep[2]
+    for i in alnNums:
+        x = alignments[i]
+        headAln = x[0]
+        tailAln = x[-1]
+        headBeg = headAln[0][2]
+        tailEnd = tailAln[0][3]
+        if headBeg < repBeg and tailEnd > repEnd:
+            appendCopyNumberChange(rep, gaps[i])
+
+def repeatNumsPerAlignment(tandemRepeats, maxRepeatLength, alignments):
     for i in alignments:
-        doColinearAlignments(tandemRepeats, i)
+        headAln = i[0]
+        tailAln = i[-1]
+        alignmentRange = headAln[0][0], headAln[0][2], tailAln[0][3]
+        r = overlappingRanges(alignmentRange, tandemRepeats, maxRepeatLength)
+        yield set(r)
+
+def gapsPerAlignment(alignments, isNeeded):
+    for i, j in zip(alignments, isNeeded):
+        yield list(gapsFromColinearAlignments(i)) if j else None
+
+def doOneQuerySequence(tandemRepeats, maxRepeatLength, alignments):
+    alignments = list(colinearAlignmentGroups(alignments))
+    repNumsPerAln = list(repeatNumsPerAlignment(tandemRepeats, maxRepeatLength,
+                                                alignments))
+    gaps = list(gapsPerAlignment(alignments, repNumsPerAln))
+    repNums = set(itertools.chain.from_iterable(repNumsPerAln))
+    for repNum in repNums:
+        doOneRepeat(tandemRepeats, alignments, gaps, repNumsPerAln, repNum)
 
 def querySequenceName(alignment):
     return alignment[1][0]
 
-def doOneMafFile(tandemRepeats, lines):
+def doOneMafFile(tandemRepeats, maxRepeatLength, lines):
     alignments = alignmentsFromMaf(lines)
     for k, v in itertools.groupby(alignments, querySequenceName):
-        doOneQuerySequence(tandemRepeats, v)
+        doOneQuerySequence(tandemRepeats, maxRepeatLength, v)
 
 def tandemGenotypes(opts, args):
     exons = sorted(exonsFromLines(myOpen(opts.genes))) if opts.genes else None
     tandemRepeats = sorted(tandemRepeatsFromLines(myOpen(args[0]), exons))
+    maxRepeatLength = maxRangeLength(tandemRepeats)
 
     if len(args) > 1:
         for fileName in args[1:]:
-            doOneMafFile(tandemRepeats, myOpen(fileName))
+            doOneMafFile(tandemRepeats, maxRepeatLength, myOpen(fileName))
     else:
-        doOneMafFile(tandemRepeats, sys.stdin)
+        doOneMafFile(tandemRepeats, maxRepeatLength, sys.stdin)
 
     for chrom, beg, end, unit, geneNames, copyNumberChanges in tandemRepeats:
         if copyNumberChanges and any(i != 0 for i in copyNumberChanges):
