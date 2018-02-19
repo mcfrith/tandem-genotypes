@@ -108,6 +108,24 @@ def alignmentsFromMaf(lines):
     if alignment:
         yield alignment
 
+def refSeqName(alignment):
+    return alignment[0][0]
+
+def refSeqBeg(alignment):
+    return alignment[0][2]
+
+def refSeqEnd(alignment):
+    return alignment[0][3]
+
+def qrySeqName(alignment):
+    return alignment[1][0]
+
+def qrySeqBeg(alignment):
+    return alignment[1][2]
+
+def qrySeqEnd(alignment):
+    return alignment[1][3]
+
 def isFwdColinear(oldAln, newAln):
     """Is oldAln upstream of newAln in all sequences?"""
     return all(i[3] <= j[2] for i, j in zip(oldAln, newAln))
@@ -143,13 +161,13 @@ def colinearAlignmentGroups(alignments):
         yield colinearAlignments
 
 def gapsFromColinearAlignments(alignments):
-    topSeqPos = alignments[0][0][2]
+    refSeqPos = refSeqBeg(alignments[0])
     insSize = delSize = 0
     for j, b in enumerate(alignments):
         if j:
             a = alignments[j - 1]
-            delSize += b[0][2] - a[0][3]
-            insSize += b[1][2] - a[1][3]
+            delSize += refSeqBeg(b) - refSeqEnd(a)
+            insSize += qrySeqBeg(b) - qrySeqEnd(a)
         alignmentColumns = itertools.izip(b[0][4], b[1][4])
         # use "read-ahead" technique, aiming to be as fast as possible:
         for x, y in alignmentColumns: break
@@ -168,13 +186,13 @@ def gapsFromColinearAlignments(alignments):
                 else: break
             else:
                 if insSize or delSize:
-                    yield topSeqPos, topSeqPos + delSize, insSize - delSize
-                    topSeqPos += delSize
+                    yield refSeqPos, refSeqPos + delSize, insSize - delSize
+                    refSeqPos += delSize
                     insSize = delSize = 0
-                topSeqPos += 1
+                refSeqPos += 1
                 for x, y in alignmentColumns:
                     if x == "-" or y == "-": break
-                    topSeqPos += 1
+                    refSeqPos += 1
                 else: break
 
 def numberOfPeriods(gapLength, repeatPeriod):  # crude
@@ -207,10 +225,8 @@ def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
     repEnd = rep[2]
     for i in joinedAlnNums:
         x = joinedAlns[i]
-        headAln = x[0]
-        tailAln = x[-1]
-        headBeg = headAln[0][2]
-        tailEnd = tailAln[0][3]
+        headBeg = refSeqBeg(x[0])
+        tailEnd = refSeqEnd(x[-1])
         if headBeg < repBeg and tailEnd > repEnd:
             appendCopyNumberChange(rep, gaps[i])
 
@@ -218,9 +234,8 @@ def repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns):
     for joinedAln in joinedAlns:
         headAln = joinedAln[0]
         tailAln = joinedAln[-1]
-        alignmentRange = headAln[0][0], headAln[0][2], tailAln[0][3]
-        r = overlappingRanges(alignmentRange, tandemRepeats, maxRepeatLength)
-        yield set(r)
+        r = refSeqName(headAln), refSeqBeg(headAln), refSeqEnd(tailAln)
+        yield set(overlappingRanges(r, tandemRepeats, maxRepeatLength))
 
 def gapsPerJoinedAln(joinedAlns, isNeeded):
     for i, j in zip(joinedAlns, isNeeded):
@@ -235,12 +250,9 @@ def doOneQuerySequence(tandemRepeats, maxRepeatLength, alignments):
     for i in repNums:
         doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, i)
 
-def querySequenceName(alignment):
-    return alignment[1][0]
-
 def doOneMafFile(tandemRepeats, maxRepeatLength, lines):
     alignments = alignmentsFromMaf(lines)
-    for k, v in itertools.groupby(alignments, querySequenceName):
+    for k, v in itertools.groupby(alignments, qrySeqName):
         doOneQuerySequence(tandemRepeats, maxRepeatLength, v)
 
 def tandemGenotypes(opts, args):
