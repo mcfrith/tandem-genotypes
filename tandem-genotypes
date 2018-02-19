@@ -15,6 +15,12 @@ def myOpen(fileName):  # faster than fileinput
         return gzip.open(fileName)
     return open(fileName)
 
+def isConsecutive(numbers):
+    for i, x in enumerate(numbers):
+        if i and x != numbers[i - 1] + 1:
+            return False
+    return True
+
 def maxRangeLength(ranges):
     return max(i[2] - i[1] for i in ranges) if ranges else 0
 
@@ -218,13 +224,21 @@ def joinedAlnNumsPerRepeat(repNumsPerJoinedAln, repNum):
         if repNum in x:
             yield i
 
+def alignedStrand(joinedAln):
+    return joinedAln[0][1][1]
+
 def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
     joinedAlnNums = list(joinedAlnNumsPerRepeat(repNumsPerJoinedAln, repNum))
+    if not isConsecutive(joinedAlnNums):
+        return
+    myJoinedAlns = [joinedAlns[i] for i in joinedAlnNums]
+    strand = alignedStrand(myJoinedAlns[0])
+    if any(alignedStrand(i) != strand for i in myJoinedAlns):
+        return
     rep = tandemRepeats[repNum]
     repBeg = rep[1]
     repEnd = rep[2]
-    for i in joinedAlnNums:
-        x = joinedAlns[i]
+    for x in myJoinedAlns:
         headBeg = refSeqBeg(x[0])
         tailEnd = refSeqEnd(x[-1])
         if headBeg < repBeg and tailEnd > repEnd:
