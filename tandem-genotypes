@@ -207,15 +207,15 @@ def numberOfPeriods(gapLength, repeatPeriod):  # crude
     return (gapLength + (repeatPeriod - 1) // 2) // repeatPeriod
 
 def appendCopyNumberChange(tandemRepeat, gaps):
-    chrom, beg, end, unit, geneNames, copyNumberChanges = tandemRepeat
+    chrom, repBeg, repEnd, unit, geneNames, copyNumberChanges = tandemRepeat
     period = len(unit)
     diff = 0
     for gapBeg, gapEnd, gapLen in gaps:
-        if gapBeg < beg and gapEnd > beg:
+        if gapBeg < repBeg and gapEnd > repBeg:
             return  # a deletion goes beyond the repeat: give up
-        if gapBeg < end and gapEnd > end:
+        if gapBeg < repEnd and gapEnd > repEnd:
             return  # a deletion goes beyond the repeat: give up
-        if gapBeg >= beg and gapEnd <= end:
+        if gapBeg >= repBeg and gapEnd <= repEnd:
             diff += numberOfPeriods(gapLen, period)
     copyNumberChanges.append(diff)
 
