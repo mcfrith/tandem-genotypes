@@ -235,14 +235,32 @@ def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
     strand = alignedStrand(myJoinedAlns[0])
     if any(alignedStrand(i) != strand for i in myJoinedAlns):
         return
+    if strand == "-":
+        myJoinedAlns.reverse()
+    joinedAlnA = myJoinedAlns[0]
+    joinedAlnZ = myJoinedAlns[-1]
+    alnBegA = refSeqBeg(joinedAlnA[0])
+    alnEndZ = refSeqEnd(joinedAlnZ[-1])
     rep = tandemRepeats[repNum]
     repBeg = rep[1]
     repEnd = rep[2]
-    for x in myJoinedAlns:
-        headBeg = refSeqBeg(x[0])
-        tailEnd = refSeqEnd(x[-1])
-        if headBeg < repBeg and tailEnd > repEnd:
-            appendCopyNumberChange(rep, gaps[i])
+    if alnBegA >= repBeg or alnEndZ <= repEnd:
+        return
+    if len(myJoinedAlns) == 1:
+        appendCopyNumberChange(rep, gaps[joinedAlnNums[0]])
+    else:
+        repLen = repEnd - repBeg
+        badBeg = max(alnBegA, repBeg - repLen)
+        badEnd = min(alnEndZ, repEnd + repLen)
+        if any(refSeqBeg(i[0]) <= badBeg for i in myJoinedAlns[1:]):
+            return
+        if any(refSeqEnd(i[-1]) >= badEnd for i in myJoinedAlns[:-1]):
+            return
+        tailAlnA = joinedAlnA[-1]
+        headAlnZ = joinedAlnZ[0]
+        insertionSize = (qrySeqBeg(headAlnZ) - qrySeqEnd(tailAlnA) +
+                         refSeqBeg(tailAlnA) - refSeqEnd(headAlnZ))
+        rep[5].append(numberOfPeriods(insertionSize, len(rep[3])))
 
 def repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns):
     for joinedAln in joinedAlns:
