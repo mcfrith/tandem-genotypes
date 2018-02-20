@@ -207,16 +207,23 @@ def numberOfPeriods(gapLength, repeatPeriod):  # crude
     return (gapLength + (repeatPeriod - 1) // 2) // repeatPeriod
 
 def appendCopyNumberChange(tandemRepeat, gaps):
+    """Estimate copy number change from alignment gaps: crude and ad hoc"""
     chrom, repBeg, repEnd, unit, geneNames, copyNumberChanges = tandemRepeat
+    repLen = repEnd - repBeg
     period = len(unit)
     diff = 0
     for gapBeg, gapEnd, gapLen in gaps:
-        if gapBeg < repBeg and gapEnd > repBeg:
-            return  # a deletion goes beyond the repeat: give up
-        if gapBeg < repEnd and gapEnd > repEnd:
-            return  # a deletion goes beyond the repeat: give up
-        if gapBeg >= repBeg and gapEnd <= repEnd:
-            diff += numberOfPeriods(gapLen, period)
+        if gapEnd < repBeg or gapBeg > repEnd:
+            continue
+        if gapBeg <= repBeg and gapEnd >= repEnd:
+            return  # no alignment to the repeat: give up
+        if (gapEnd == repBeg or gapBeg == repEnd) and gapLen <= 0:
+            continue  # ignore deletions adjacent to the repeat
+        if (repBeg - gapBeg) * 2 >= repLen or (gapEnd - repEnd) * 2 >= repLen:
+            return  # a gap goes too far beyond the repeat: give up
+        overlap = min(gapEnd, repEnd) - max(gapBeg, repBeg)
+        myLen = max(gapLen, -overlap)  # don't count deletion beyond the repeat
+        diff += numberOfPeriods(myLen, period)
     copyNumberChanges.append(diff)
 
 def joinedAlnNumsPerRepeat(repNumsPerJoinedAln, repNum):
