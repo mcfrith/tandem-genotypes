@@ -259,7 +259,7 @@ def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
         tailAlnA = joinedAlnA[-1]
         headAlnZ = joinedAlnZ[0]
         insertionSize = (qrySeqBeg(headAlnZ) - qrySeqEnd(tailAlnA) +
-                         refSeqBeg(tailAlnA) - refSeqEnd(headAlnZ))
+                         refSeqEnd(tailAlnA) - refSeqBeg(headAlnZ))
         rep[5].append(numberOfPeriods(insertionSize, len(rep[3])))
 
 def repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns):
