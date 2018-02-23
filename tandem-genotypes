@@ -210,6 +210,9 @@ def appendCopyNumberChange(tandemRepeat, gaps):
     """Estimate copy number change from alignment gaps: crude and ad hoc"""
     chrom, repBeg, repEnd, unit, geneNames, copyNumberChanges = tandemRepeat
     repLen = repEnd - repBeg
+    minAlignedFlank = (repLen + 1) // 2
+    maxAlnBeg = repBeg - minAlignedFlank
+    minAlnEnd = repEnd + minAlignedFlank
     period = len(unit)
     diff = 0
     for gapBeg, gapEnd, gapLen in gaps:
@@ -219,7 +222,7 @@ def appendCopyNumberChange(tandemRepeat, gaps):
             return  # no alignment to the repeat: give up
         if (gapEnd == repBeg or gapBeg == repEnd) and gapLen <= 0:
             continue  # ignore deletions adjacent to the repeat
-        if (repBeg - gapBeg) * 2 >= repLen or (gapEnd - repEnd) * 2 >= repLen:
+        if gapBeg <= maxAlnBeg or gapEnd >= minAlnEnd:
             return  # a gap goes too far beyond the repeat: give up
         overlap = min(gapEnd, repEnd) - max(gapBeg, repBeg)
         myLen = max(gapLen, -overlap)  # don't count deletion beyond the repeat
