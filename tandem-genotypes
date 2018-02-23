@@ -251,17 +251,18 @@ def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
     rep = tandemRepeats[repNum]
     repBeg = rep[1]
     repEnd = rep[2]
-    if alnBegA >= repBeg or alnEndZ <= repEnd:
+    repLen = repEnd - repBeg
+    minAlignedFlank = (repLen + 1) // 2  # xxx ???
+    maxAlnBeg = repBeg - minAlignedFlank
+    minAlnEnd = repEnd + minAlignedFlank
+    if alnBegA > maxAlnBeg or alnEndZ < minAlnEnd:
         return
     if len(myJoinedAlns) == 1:
         appendCopyNumberChange(rep, gaps[joinedAlnNums[0]])
     else:
-        repLen = repEnd - repBeg
-        badBeg = max(alnBegA, repBeg - repLen)
-        badEnd = min(alnEndZ, repEnd + repLen)
-        if any(refSeqBeg(i[0]) <= badBeg for i in myJoinedAlns[1:]):
+        if any(refSeqBeg(i[0]) <= maxAlnBeg for i in myJoinedAlns[1:]):
             return
-        if any(refSeqEnd(i[-1]) >= badEnd for i in myJoinedAlns[:-1]):
+        if any(refSeqEnd(i[-1]) >= minAlnEnd for i in myJoinedAlns[:-1]):
             return
         tailAlnA = joinedAlnA[-1]
         headAlnZ = joinedAlnZ[0]
