@@ -211,7 +211,11 @@ def numberOfPeriods(gapLength, repeatPeriod):  # crude
         return -numberOfPeriods(-gapLength, repeatPeriod)
     return (gapLength + (repeatPeriod - 1) // 2) // repeatPeriod
 
-def appendCopyNumberChange(tandemRepeat, gaps):
+def doAppend(copyNumberChanges, change, queryName):
+    t = change, queryName
+    copyNumberChanges.append(t)
+
+def appendCopyNumberChange(tandemRepeat, gaps, queryName):
     """Estimate copy number change from alignment gaps: crude and ad hoc"""
     chrom, repBeg, repEnd, unit, geneNames, copyNumberChanges = tandemRepeat
     repLen = repEnd - repBeg
@@ -234,7 +238,7 @@ def appendCopyNumberChange(tandemRepeat, gaps):
         overlap = min(gapEnd, repEnd) - max(gapBeg, repBeg)
         myLen = max(gapLen, -overlap)  # don't count deletion beyond the repeat
         diff += numberOfPeriods(myLen, period)
-    copyNumberChanges.append(diff)
+    doAppend(copyNumberChanges, diff, queryName)
 
 def joinedAlnNumsPerRepeat(repNumsPerJoinedAln, repNum):
     for i, x in enumerate(repNumsPerJoinedAln):
@@ -267,8 +271,9 @@ def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
     minAlnEnd = repEnd + minAlignedFlank
     if alnBegA > maxAlnBeg or alnEndZ < minAlnEnd:
         return
+    queryName = qrySeqName(joinedAlnA[0])
     if len(myJoinedAlns) == 1:
-        appendCopyNumberChange(rep, gaps[joinedAlnNums[0]])
+        appendCopyNumberChange(rep, gaps[joinedAlnNums[0]], queryName)
     else:
         if any(refSeqBeg(i[0]) <= maxAlnBeg for i in myJoinedAlns[1:]):
             return
@@ -278,7 +283,8 @@ def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
         headAlnZ = joinedAlnZ[0]
         insertionSize = (qrySeqBeg(headAlnZ) - qrySeqEnd(tailAlnA) +
                          refSeqEnd(tailAlnA) - refSeqBeg(headAlnZ))
-        rep[5].append(numberOfPeriods(insertionSize, len(rep[3])))
+        change = numberOfPeriods(insertionSize, len(rep[3]))
+        doAppend(rep[5], change, queryName)
 
 def repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns):
     for joinedAln in joinedAlns:
@@ -320,8 +326,12 @@ def tandemGenotypes(opts, args):
     print "#", prog, " ".join(sys.argv[1:])
 
     for chrom, beg, end, unit, geneNames, copyNumberChanges in tandemRepeats:
-        if copyNumberChanges and any(i != 0 for i in copyNumberChanges):
-            changes = " ".join("%3d" % i for i in sorted(copyNumberChanges))
+        if copyNumberChanges and any(i[0] for i in copyNumberChanges):
+            s = sorted(copyNumberChanges)
+            if opts.verbose:
+                changes = " ".join(str(i[0]) + ":" + i[1] for i in s)
+            else:
+                changes = " ".join("%3d" % i[0] for i in s)
             out = chrom, str(beg), str(end), unit, ",".join(geneNames), changes
             print "\t".join(out)
 
@@ -333,6 +343,7 @@ if __name__ == "__main__":
     op.add_option("-g", "--genes", metavar="FILE", help=
                   "only check tandem repeats that overlap exons of genes "
                   "in a genePred file")
+    op.add_option("-v", "--verbose", action="count", help="show more details")
     opts, args = op.parse_args()
     if not args:
         op.error("please give me repeats and MAF alignments")
