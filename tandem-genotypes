@@ -5,6 +5,7 @@ import bisect
 import gzip
 import itertools
 import optparse
+import os
 import signal
 import sys
 
@@ -314,6 +315,9 @@ def tandemGenotypes(opts, args):
             doOneMafFile(tandemRepeats, maxRepeatLength, myOpen(fileName))
     else:
         doOneMafFile(tandemRepeats, maxRepeatLength, sys.stdin)
+
+    prog = os.path.basename(sys.argv[0])
+    print "#", prog, " ".join(sys.argv[1:])
 
     for chrom, beg, end, unit, geneNames, copyNumberChanges in tandemRepeats:
         if copyNumberChanges and any(i != 0 for i in copyNumberChanges):
