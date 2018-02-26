@@ -16,6 +16,15 @@ def myOpen(fileName):  # faster than fileinput
         return gzip.open(fileName)
     return open(fileName)
 
+def log(opts, s):
+    if opts.verbose:
+        sys.stderr.write(s + "\n")
+
+def openAndLog(opts, fileName):
+    f = myOpen(fileName)
+    log(opts, "reading " + fileName + "...")
+    return f
+
 def isConsecutive(numbers):
     for i, x in enumerate(numbers):
         if i and x != numbers[i - 1] + 1:
@@ -312,15 +321,17 @@ def doOneMafFile(tandemRepeats, maxRepeatLength, lines):
         doOneQuerySequence(tandemRepeats, maxRepeatLength, v)
 
 def tandemGenotypes(opts, args):
-    exons = sorted(exonsFromLines(myOpen(opts.genes))) if opts.genes else None
-    tandemRepeats = sorted(tandemRepeatsFromLines(myOpen(args[0]), exons))
+    exons = None
+    if opts.genes:
+        exons = sorted(exonsFromLines(openAndLog(opts, opts.genes)))
+
+    tandemRepeats = sorted(tandemRepeatsFromLines(openAndLog(opts, args[0]),
+                                                  exons))
     maxRepeatLength = maxRangeLength(tandemRepeats)
 
-    if len(args) > 1:
-        for fileName in args[1:]:
-            doOneMafFile(tandemRepeats, maxRepeatLength, myOpen(fileName))
-    else:
-        doOneMafFile(tandemRepeats, maxRepeatLength, sys.stdin)
+    fileNames = args[1:] if len(args) > 1 else ["-"]
+    for i in fileNames:
+        doOneMafFile(tandemRepeats, maxRepeatLength, openAndLog(opts, i))
 
     prog = os.path.basename(sys.argv[0])
     print "#", prog, " ".join(sys.argv[1:])
