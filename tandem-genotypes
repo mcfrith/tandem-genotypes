@@ -169,11 +169,13 @@ def colinearAlignmentGroups(alignments):
 def gapsFromColinearAlignments(alignments):
     refSeqPos = refSeqBeg(alignments[0])
     insSize = delSize = 0
+    isInterAlignment = False
     for j, b in enumerate(alignments):
         if j:
             a = alignments[j - 1]
             delSize += refSeqBeg(b) - refSeqEnd(a)
             insSize += qrySeqBeg(b) - qrySeqEnd(a)
+            isInterAlignment = True
         alignmentColumns = itertools.izip(b[0][4], b[1][4])
         # use "read-ahead" technique, aiming to be as fast as possible:
         for x, y in alignmentColumns: break
@@ -192,9 +194,11 @@ def gapsFromColinearAlignments(alignments):
                 else: break
             else:
                 if insSize or delSize:
-                    yield refSeqPos, refSeqPos + delSize, insSize - delSize
+                    yield (refSeqPos, refSeqPos + delSize, insSize - delSize,
+                           isInterAlignment)
                     refSeqPos += delSize
                     insSize = delSize = 0
+                    isInterAlignment = False
                 refSeqPos += 1
                 for x, y in alignmentColumns:
                     if x == "-" or y == "-": break
@@ -215,13 +219,15 @@ def appendCopyNumberChange(tandemRepeat, gaps):
     minAlnEnd = repEnd + minAlignedFlank
     period = len(unit)
     diff = 0
-    for gapBeg, gapEnd, gapLen in gaps:
+    for gapBeg, gapEnd, gapLen, isInterAlignment in gaps:
         if gapEnd < repBeg or gapBeg > repEnd:
             continue
         if gapBeg <= repBeg and gapEnd >= repEnd:
             return  # no alignment to the repeat: give up
         if (gapEnd == repBeg or gapBeg == repEnd) and gapLen <= 0:
             continue  # ignore deletions adjacent to the repeat
+        if isInterAlignment and gapLen > 0:
+            return  # unexpected colinearity: give up
         if gapBeg <= maxAlnBeg or gapEnd >= minAlnEnd:
             return  # a gap goes too far beyond the repeat: give up
         overlap = min(gapEnd, repEnd) - max(gapBeg, repBeg)
