@@ -55,15 +55,29 @@ def overlappingRanges(queryRange, sortedRanges, maxSortedRangeLength):
 def exonsFromLines(lines):
     for line in lines:
         fields = line.split()
-        chrom = fields[2]
-        exonBegs = fields[9].rstrip(",").split(",")
-        exonEnds = fields[10].rstrip(",").split(",")
-        if len(fields) > 12:
-            geneName = fields[12]
-        else:
-            geneName = fields[0]
-        for beg, end in zip(exonBegs, exonEnds):
-            yield chrom, int(beg), int(end), geneName
+        if len(fields) < 6 or fields[5] in "+-":  # BED
+            chrom = fields[0]
+            chromBeg = int(fields[1])
+            chromEnd = int(fields[2])
+            geneName = fields[3]
+            if len(fields) < 12:
+                yield chrom, chromBeg, chromEnd, geneName
+            else:
+                exonLens = fields[10].rstrip(",").split(",")
+                exonBegs = fields[11].rstrip(",").split(",")
+                for b, s in zip(exonBegs, exonLens):
+                    beg = chromBeg + int(b)
+                    yield chrom, beg, beg + int(s), geneName
+        else:  # genePred
+            chrom = fields[2]
+            exonBegs = fields[9].rstrip(",").split(",")
+            exonEnds = fields[10].rstrip(",").split(",")
+            if len(fields) > 12:
+                geneName = fields[12]
+            else:
+                geneName = fields[0]
+            for beg, end in zip(exonBegs, exonEnds):
+                yield chrom, int(beg), int(end), geneName
 
 def tandemRepeatsFromLines(lines, sortedExons):
     maxExonLength = maxRangeLength(sortedExons)
@@ -357,7 +371,7 @@ if __name__ == "__main__":
     op = optparse.OptionParser(usage=usage, description=description)
     op.add_option("-g", "--genes", metavar="FILE", help=
                   "only check tandem repeats that overlap exons of genes "
-                  "in a genePred file")
+                  "in a genePred or BED file")
     op.add_option("-v", "--verbose", action="count", help="show more details")
     opts, args = op.parse_args()
     if not args:

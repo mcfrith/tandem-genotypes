@@ -19,7 +19,7 @@ the repeating unit in column 4:
     chr1    6370457 6370506 TAT
     chr1    6708960 6709001 TC
 
-You can supply genes with: refGene.txt, refFlat.txt.
+You can supply genes in these formats: refGene.txt, refFlat.txt, BED.
 
 The output looks like this:
 

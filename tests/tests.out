@@ -7,7 +7,7 @@ Options:
   -h, --help            show this help message and exit
   -g FILE, --genes=FILE
                         only check tandem repeats that overlap exons of genes
-                        in a genePred file
+                        in a genePred or BED file
   -v, --verbose         show more details
 
 TEST tandem-genotypes microsat.txt nano.maf
