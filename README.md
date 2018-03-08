@@ -12,7 +12,12 @@ all tandem repeats.
 You can supply tandem repeat locations by any of these files (which
 can be obtained at the [UCSC genome
 database](http://genome.ucsc.edu/)): microsat.txt, simpleRepeat.txt,
-rmsk.txt, RepeatMasker .out.
+rmsk.txt, RepeatMasker .out.  You can also supply repeats in
+[BED4](https://genome.ucsc.edu/FAQ/FAQformat.html#format1) format with
+the repeating unit in column 4:
+
+    chr1    6370457 6370506 TAT
+    chr1    6708960 6709001 TC
 
 You can supply genes with: refGene.txt, refFlat.txt.
 
