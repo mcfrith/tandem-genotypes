@@ -60,7 +60,7 @@ def exonsFromLines(opts, lines):
             chrom = fields[0]
             chromBeg = int(fields[1])
             chromEnd = int(fields[2])
-            geneName = fields[3]
+            geneName = fields[3] if len(fields) > 3 else "."
             if len(fields) < 12 or parts == 3:
                 yield chrom, chromBeg, chromEnd, geneName
             else:
