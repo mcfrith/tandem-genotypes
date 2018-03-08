@@ -52,7 +52,8 @@ def overlappingRanges(queryRange, sortedRanges, maxSortedRangeLength):
         yield i
         i += 1
 
-def exonsFromLines(lines):
+def exonsFromLines(opts, lines):
+    parts = ("E" in opts.parts) + 2 * ("I" in opts.parts)
     for line in lines:
         fields = line.split()
         if len(fields) < 6 or fields[5] in "+-":  # BED
@@ -60,14 +61,19 @@ def exonsFromLines(lines):
             chromBeg = int(fields[1])
             chromEnd = int(fields[2])
             geneName = fields[3]
-            if len(fields) < 12:
+            if len(fields) < 12 or parts == 3:
                 yield chrom, chromBeg, chromEnd, geneName
             else:
                 exonLens = fields[10].rstrip(",").split(",")
                 exonBegs = fields[11].rstrip(",").split(",")
+                end = 0
                 for b, s in zip(exonBegs, exonLens):
                     beg = chromBeg + int(b)
-                    yield chrom, beg, beg + int(s), geneName
+                    if parts == 2 and end:
+                        yield chrom, end, beg, geneName
+                    end = beg + int(s)
+                    if parts == 1:
+                        yield chrom, beg, end, geneName
         else:  # genePred
             chrom = fields[2]
             exonBegs = fields[9].rstrip(",").split(",")
@@ -76,8 +82,17 @@ def exonsFromLines(lines):
                 geneName = fields[12]
             else:
                 geneName = fields[0]
-            for beg, end in zip(exonBegs, exonEnds):
-                yield chrom, int(beg), int(end), geneName
+            if parts == 3:
+                yield chrom, int(exonBegs[0]), int(exonEnds[-1]), geneName
+            else:
+                end = 0
+                for b, e in zip(exonBegs, exonEnds):
+                    beg = int(b)
+                    if parts == 2 and end:
+                        yield chrom, end, beg, geneName
+                    end = int(e)
+                    if parts == 1:
+                        yield chrom, beg, end, geneName
 
 def tandemRepeatsFromLines(lines, sortedExons):
     maxExonLength = maxRangeLength(sortedExons)
@@ -341,7 +356,7 @@ def doOneMafFile(tandemRepeats, maxRepeatLength, lines):
 def tandemGenotypes(opts, args):
     exons = None
     if opts.genes:
-        exons = sorted(exonsFromLines(openAndLog(opts, opts.genes)))
+        exons = sorted(exonsFromLines(opts, openAndLog(opts, opts.genes)))
 
     tandemRepeats = sorted(tandemRepeatsFromLines(openAndLog(opts, args[0]),
                                                   exons))
@@ -370,8 +385,11 @@ if __name__ == "__main__":
     description = "Try to indicate genotypes of tandem repeats."
     op = optparse.OptionParser(usage=usage, description=description)
     op.add_option("-g", "--genes", metavar="FILE", help=
-                  "only check tandem repeats that overlap exons of genes "
+                  "only check tandem repeats that overlap genes "
                   "in a genePred or BED file")
+    op.add_option("-p", "--parts", metavar="LETTERS", default="E", help=
+                  "only check tandem repeats that overlap these gene parts: "
+                  "E=exons, I=introns (default=%default)")
     op.add_option("-v", "--verbose", action="count", help="show more details")
     opts, args = op.parse_args()
     if not args:

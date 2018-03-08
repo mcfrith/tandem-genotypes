@@ -9,17 +9,32 @@ This will check all tandem repeats in `microsat.txt` that overlap any
 exon in `refGene.txt`.  If you omit `-g refGene.txt`, it will check
 all tandem repeats.
 
+## Tandem repeat input
+
 You can supply tandem repeat locations by any of these files (which
 can be obtained at the [UCSC genome
 database](http://genome.ucsc.edu/)): microsat.txt, simpleRepeat.txt,
-rmsk.txt, RepeatMasker .out.  You can also supply repeats in
+rmsk.txt, RepeatMasker .out.
+
+You can also supply repeats in
 [BED4](https://genome.ucsc.edu/FAQ/FAQformat.html#format1) format with
 the repeating unit in column 4:
 
     chr1    6370457 6370506 TAT
     chr1    6708960 6709001 TC
 
+## Gene input
+
 You can supply genes in these formats: refGene.txt, refFlat.txt, BED.
+
+Option `-p` selects tandem repeats that overlap: exons (`-pE`, the
+default), introns (`-pI`), or either (`-pEI`).
+
+If you supply genes in BED format with < 12 columns, exon/intron
+information is absent: `tandem-genotypes` will check all tandem
+repeats that overlap any BED range (ignoring `-p`).
+
+## Output
 
 The output looks like this:
 
