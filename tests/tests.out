@@ -70,3 +70,7 @@ chr22	41982508	41982533	AAAACAA	SEPT3	 -2  -1   0   0   0   0   0   0   0   0   
 chr22	41991062	41991093	CAAA	SEPT3	 -1  -1  -1  -1  -1  -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
 chr22	41994883	41994923	TG	SEPT3	-16 -14 -13 -13 -13 -13 -12 -11 -10 -10  -7  -7  -7  -4  -3  -1   0   0   0   1   2   3
 
+TEST tandem-genotypes near-beg.bed near-beg.maf
+# tandem-genotypes near-beg.bed near-beg.maf
+ref	21	146	GGGGCC	.	 21
+
