@@ -315,18 +315,26 @@ def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
     repEnd = rep[2]
     repLen = repEnd - repBeg
     minAlignedFlank = (repLen + 1) // 2  # xxx ???
+    refLen = refSeqLen(joinedAlnA[0])
     maxAlnBeg = max(repBeg - minAlignedFlank, 0)
-    minAlnEnd = min(repEnd + minAlignedFlank, refSeqLen(joinedAlnA[0]))
+    minAlnEnd = min(repEnd + minAlignedFlank, refLen)
     if alnBegA > maxAlnBeg or alnEndZ < minAlnEnd:
         return
     queryName = qrySeqName(joinedAlnA[0])
     if len(myJoinedAlns) == 1:
         appendCopyNumberChange(rep, gaps[joinedAlnNums[0]], queryName)
     else:
-        if any(refSeqBeg(i[0]) <= maxAlnBeg for i in myJoinedAlns[1:]):
-            return
-        if any(refSeqEnd(i[-1]) >= minAlnEnd for i in myJoinedAlns[:-1]):
-            return
+        tooFar = repLen * 2  # xxx ???
+        badBeg = max(alnBegA, repBeg - tooFar)
+        badEnd = min(alnEndZ, repEnd + tooFar)
+        for i in myJoinedAlns[1:]:
+            b = refSeqBeg(i[0])
+            if b <= badBeg or alnBegA > max(b - minAlignedFlank, 0):
+                return
+        for i in myJoinedAlns[:-1]:
+            e = refSeqEnd(i[-1])
+            if e >= badEnd or alnEndZ < min(e + minAlignedFlank, refLen):
+                return
         tailAlnA = joinedAlnA[-1]
         headAlnZ = joinedAlnZ[0]
         insertionSize = (qrySeqBeg(headAlnZ) - qrySeqEnd(tailAlnA) +

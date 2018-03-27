@@ -1,0 +1,8 @@
+a score=807 mismap=1e-10
+s chr3 63912558 189 + 198295559 ctttcccccttttttttgttACATTGTAGGAGCGGAAAGAATGTCGGAGCGGGCCGCGGATGACGTCAGGGGGGAGCCgcgccgcgcggcggcggcggcgggcggagcagcggccgcggccgcccggcagcagcagcagcagcagcagcagcagcagccgccgcctccgcagccccagcggcagcagca
+s qry        22 173 +       626 CTTTCCCC----TTTTTGTTACATTGTAGGAGCGGAA-GAATGTCGG-GCAGGCCGCGGATGACGTC---GGGGAGCCGCGccgcgcggcggcggcggcaggc-gaacagcggccgcggccgcccggcagcagcggcagcagcagcagcagcagcagcagcag---caacag---cagcagcagcagca
+
+a score=1393 mismap=1e-10
+s chr3 63912682 315 + 198295559 cggcagcagcagcagcagcagcagcagcagcagccgccgcctccgcagccccagcggcagcagcacccgccaccgccgccacggcgcacacggccGGAGGACGGCGGGCCCGGcgccgcctccacctcggccgccgCAATGGCGACGGTCGGGGAGCGCAGGCCTCTGCCCAGTCCTGAAGTGATGCTGGGACAGTCGTGGAATCTGTGGGTTGAGGCTTCCAAACTTCCTGGGA--AGGACGGTGAGTGTCCACGCCCTCCTCCCCCCTTCACCCCCTCGCgaccccctcctctctcctcccctcccccctgcccc
+s qry       323 289 +       626 cagcaacagcagcagcagcagcagcaacagcagccgccgcctccgcagccccagcggcagcagcgcc-gccaccgccgccacggcgcgcacggcCAGAGGACGG---GCCAA----CGCCTCCACCTCGGCC--TGCAATGGCGACGGTC-GGGAGCGCAGGCCTCTGCCCAGTCCTGAAGTGATGCTGGGACAGTCGTGGAATCTGTGGGTTGAGGCTTC-AAACTTCC----ACCAGGACGGTGAGTGT---CGCCCTCCTCCCCA--T-GCCCCCTCGCGA---CCTC--CTctcctcccct-ccccctgccCC
+

@@ -77,3 +77,7 @@ ref	21	146	GGGGCC	.	 21
 TEST tandem-genotypes small-rep.bed small-rep.maf
 # tandem-genotypes small-rep.bed small-rep.maf
 
+TEST tandem-genotypes far.bed far.maf
+# tandem-genotypes far.bed far.maf
+chr3	63912686	63912715	CAG	.	 64
+
