@@ -271,14 +271,16 @@ def appendCopyNumberChange(tandemRepeat, gaps, queryName):
     period = len(unit)
     diff = 0
     for gapBeg, gapEnd, gapLen, isInterAlignment in gaps:
+        if gapEnd <= maxAlnBeg or gapBeg >= minAlnEnd:
+            continue
+        if isInterAlignment and gapLen > 0:
+            return  # suspicious, unexpected insertion: give up
         if gapEnd < repBeg or gapBeg > repEnd:
             continue
         if gapBeg <= repBeg and gapEnd >= repEnd:
             return  # no alignment to the repeat: give up
         if (gapEnd == repBeg or gapBeg == repEnd) and gapLen <= 0:
             continue  # ignore deletions adjacent to the repeat
-        if isInterAlignment and gapLen > 0:
-            return  # unexpected colinearity: give up
         if gapBeg <= maxAlnBeg or gapEnd >= minAlnEnd:
             return  # a gap goes too far beyond the repeat: give up
         overlap = min(gapEnd, repEnd) - max(gapBeg, repBeg)

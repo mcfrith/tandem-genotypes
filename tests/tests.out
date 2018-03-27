@@ -74,3 +74,6 @@ TEST tandem-genotypes near-beg.bed near-beg.maf
 # tandem-genotypes near-beg.bed near-beg.maf
 ref	21	146	GGGGCC	.	 21
 
+TEST tandem-genotypes small-rep.bed small-rep.maf
+# tandem-genotypes small-rep.bed small-rep.maf
+
