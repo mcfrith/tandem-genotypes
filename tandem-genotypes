@@ -263,7 +263,7 @@ def doAppend(copyNumberChanges, change, queryName):
     t = change, queryName
     copyNumberChanges.append(t)
 
-def appendCopyNumberChange(tandemRepeat, gaps, queryName):
+def appendCopyNumberChange(opts, tandemRepeat, gaps, queryName):
     """Estimate copy number change from alignment gaps: crude and ad hoc"""
     chrom, repBeg, repEnd, unit, geneNames, copyNumberChanges = tandemRepeat
     repLen = repEnd - repBeg
@@ -298,8 +298,7 @@ def joinedAlnNumsPerRepeat(repNumsPerJoinedAln, repNum):
 def alignedStrand(joinedAln):
     return joinedAln[0][1][2]
 
-def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
-    joinedAlnNums = list(joinedAlnNumsPerRepeat(repNumsPerJoinedAln, repNum))
+def doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums):
     if not isConsecutive(joinedAlnNums):
         return
     myJoinedAlns = [joinedAlns[i] for i in joinedAlnNums]
@@ -312,7 +311,6 @@ def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
     joinedAlnZ = myJoinedAlns[-1]
     alnBegA = refSeqBeg(joinedAlnA[0])
     alnEndZ = refSeqEnd(joinedAlnZ[-1])
-    rep = tandemRepeats[repNum]
     repBeg = rep[1]
     repEnd = rep[2]
     repLen = repEnd - repBeg
@@ -324,7 +322,7 @@ def doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, repNum):
         return
     queryName = qrySeqName(joinedAlnA[0])
     if len(myJoinedAlns) == 1:
-        appendCopyNumberChange(rep, gaps[joinedAlnNums[0]], queryName)
+        appendCopyNumberChange(opts, rep, gaps[joinedAlnNums[0]], queryName)
     else:
         tooFar = repLen * 2  # xxx ???
         badBeg = max(alnBegA, repBeg - tooFar)
@@ -355,19 +353,21 @@ def gapsPerJoinedAln(joinedAlns, isNeeded):
     for i, j in zip(joinedAlns, isNeeded):
         yield list(gapsFromColinearAlignments(i)) if j else None
 
-def doOneQuerySequence(tandemRepeats, maxRepeatLength, alignments):
+def doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, alignments):
     joinedAlns = list(colinearAlignmentGroups(alignments))
     g = repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns)
     repNumsPerJoinedAln = list(g)
     gaps = list(gapsPerJoinedAln(joinedAlns, repNumsPerJoinedAln))
     repNums = set(itertools.chain.from_iterable(repNumsPerJoinedAln))
     for i in repNums:
-        doOneRepeat(tandemRepeats, joinedAlns, gaps, repNumsPerJoinedAln, i)
+        rep = tandemRepeats[i]
+        joinedAlnNums = list(joinedAlnNumsPerRepeat(repNumsPerJoinedAln, i))
+        doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums)
 
-def doOneMafFile(tandemRepeats, maxRepeatLength, lines):
+def doOneMafFile(opts, tandemRepeats, maxRepeatLength, lines):
     alignments = alignmentsFromMaf(lines)
     for k, v in itertools.groupby(alignments, qrySeqName):
-        doOneQuerySequence(tandemRepeats, maxRepeatLength, v)
+        doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, v)
 
 def tandemGenotypes(opts, args):
     exons = None
@@ -380,7 +380,7 @@ def tandemGenotypes(opts, args):
 
     fileNames = args[1:] if len(args) > 1 else ["-"]
     for i in fileNames:
-        doOneMafFile(tandemRepeats, maxRepeatLength, openAndLog(opts, i))
+        doOneMafFile(opts, tandemRepeats, maxRepeatLength, openAndLog(opts, i))
 
     prog = os.path.basename(sys.argv[0])
     print "#", prog, " ".join(sys.argv[1:])
