@@ -99,3 +99,7 @@ TEST tandem-genotypes -u3 -g refFlat.txt simpleRepeat.txt nano.maf
 # tandem-genotypes -u3 -g refFlat.txt simpleRepeat.txt nano.maf
 chr22	41926181	41926216	CCAGGACCAGCG	TNFRSF13C	 -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
 
+TEST tandem-genotypes slop3.bed slop3.maf
+# tandem-genotypes slop3.bed slop3.maf
+chr9	27573529	27573546	GGGGCC	.	 16
+

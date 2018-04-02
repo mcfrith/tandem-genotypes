@@ -326,7 +326,7 @@ def doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums):
     if len(myJoinedAlns) == 1:
         appendCopyNumberChange(opts, rep, gaps[joinedAlnNums[0]], queryName)
     else:
-        tooFar = repLen * 2  # xxx ???
+        tooFar = repLen * 3  # xxx ???
         badBeg = max(alnBegA, repBeg - tooFar)
         badEnd = min(alnEndZ, repEnd + tooFar)
         for i in myJoinedAlns[1:]:

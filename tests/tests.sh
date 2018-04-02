@@ -24,5 +24,6 @@ PATH=..:$PATH
     try tandem-genotypes far.bed far.maf
     try tandem-genotypes -u1 -pI -g refFlat.txt simpleRepeat.txt nano.maf
     try tandem-genotypes -u3 -g refFlat.txt simpleRepeat.txt nano.maf
+    try tandem-genotypes slop3.bed slop3.maf
 } 2>&1 |
 diff -u $(basename $0 .sh).out -

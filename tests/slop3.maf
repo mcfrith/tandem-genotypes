@@ -1,0 +1,8 @@
+a score=13571 mismap=1e-10
+s chr9 27573479 167 + 138394717 ccgcagccccgccccgggcccgccc----ccgg------gcccgccccgaccacgccccggccccggccc--cggcccctaGCGCGCGACTCCTGAGTTCCAG-AGCTTGCTACAGGCTGCGGTTGTTTCCCTCCTTGTTTTCTTCTGGTTAATCTTTATCAGGTCTTTTCTTGTTCACC
+s qry      5468 162 -      9262 ccg--gccccgccccggccccgccctgccccggccTCCTGCCT--CCCGGCTG-GCCTCGGCTCCCGTCCTTCGGCCCCTAGCGCGCGACTCCTGAGTTCCAGGAGTTTGCCACAGGCCGCG--CGTTTCC----TTGCTTTC-----ATTAATCTT-ATCAGGTCTTT-CTTGTTCACC
+
+a score=22788 mismap=1e-10
+s chr9 27573429 117 + 138394717 CCCACTCGCCACcgcctgcgcctccgccgccgcgggcgcaggcaccgcaaccgcagccccgccccgg---gcccgcccccgggcccgccccgaccacgccccggccccggccccggcccc
+s qry      5332 106 -      9262 CCCACT-GCCaccgcctgcGCCT----CGTCGCGGGCGTA--TACCGCAACCG--G--CCG-CCCGGGCTGCCCG-CCCCGGGCCCGTTCTGACCACGccccggccctggccct-gcccc
+
