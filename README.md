@@ -1,7 +1,13 @@
 # tandem-genotypes
 
 `tandem-genotypes` tries to indicate the copy numbers of tandem
-repeats, from alignments of DNA reads to a genome.  Its usage is:
+repeats, from alignments of DNA reads to a genome.
+
+## Usage
+
+First, align your sequences as described
+[here](https://github.com/mcfrith/last-rna/blob/master/last-long-reads.md).
+Then, do:
 
     tandem-genotypes -g refGene.txt microsat.txt alignments.maf
 
@@ -49,3 +55,18 @@ alignment that covers the repeat: for example -2 means the aligned
 read has 2 fewer copies than the reference.  Here, the first line is a
 nice example with 2 clear alleles, and the second line is a nasty
 example without clear alleles.
+
+## Options
+
+- `-h`, `--help`: show a help message and exit.
+
+- `-g FILE`, `--genes=FILE`: only check tandem repeats that overlap
+  genes in a genePred or BED file.
+
+- `-p LETTERS`, `--parts=LETTERS`: only check tandem repeats that
+  overlap these gene parts: E=exons, I=introns (default=E).
+
+- `-u BP`, `--min-unit=BP`: ignore repeats with unit shorter than BP
+  (default=2).
+
+- `-v`, `--verbose`: show more details.

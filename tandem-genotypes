@@ -94,7 +94,7 @@ def exonsFromLines(opts, lines):
                     if parts == 1:
                         yield chrom, beg, end, geneName
 
-def tandemRepeatsFromLines(lines, sortedExons):
+def tandemRepeatsFromLines(opts, lines, sortedExons):
     maxExonLength = maxRangeLength(sortedExons)
     for line in lines:
         fields = line.split()
@@ -126,8 +126,10 @@ def tandemRepeatsFromLines(lines, sortedExons):
             end = int(fields[6])
         else:
             continue
-        if len(set(unit)) == 1:
-            continue  # don't try homo-polymers
+        if len(unit) < opts.min_unit:
+            continue
+        if opts.min_unit > 1 and len(set(unit)) == 1:  # idiot-proofing
+            continue
         if sortedExons is None:
             geneNames = ["."]
         else:
@@ -372,8 +374,8 @@ def tandemGenotypes(opts, args):
     if opts.genes:
         exons = sorted(exonsFromLines(opts, openAndLog(opts, opts.genes)))
 
-    tandemRepeats = sorted(tandemRepeatsFromLines(openAndLog(opts, args[0]),
-                                                  exons))
+    repFile = openAndLog(opts, args[0])
+    tandemRepeats = sorted(tandemRepeatsFromLines(opts, repFile, exons))
     maxRepeatLength = maxRangeLength(tandemRepeats)
 
     fileNames = args[1:] if len(args) > 1 else ["-"]
@@ -404,6 +406,9 @@ if __name__ == "__main__":
     op.add_option("-p", "--parts", metavar="LETTERS", default="E", help=
                   "only check tandem repeats that overlap these gene parts: "
                   "E=exons, I=introns (default=%default)")
+    op.add_option("-u", "--min-unit", type="int", default=2, metavar="BP",
+                  help="ignore repeats with unit shorter than BP "
+                  "(default=%default)")
     op.add_option("-v", "--verbose", action="count", help="show more details")
     opts, args = op.parse_args()
     if not args:
