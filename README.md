@@ -69,4 +69,6 @@ example without clear alleles.
 - `-u BP`, `--min-unit=BP`: ignore repeats with unit shorter than BP
   (default=2).
 
+- `--mode=LETTER`: S=strict, L=lenient (default=S).
+
 - `-v`, `--verbose`: show more details.

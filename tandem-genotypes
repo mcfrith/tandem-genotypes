@@ -275,17 +275,19 @@ def appendCopyNumberChange(opts, tandemRepeat, gaps, queryName):
     for gapBeg, gapEnd, gapLen, isInterAlignment in gaps:
         if gapEnd <= maxAlnBeg or gapBeg >= minAlnEnd:
             continue
-        if isInterAlignment and gapLen > 0:
-            return  # suspicious, unexpected insertion: give up
-        if gapEnd < repBeg or gapBeg > repEnd:
-            continue
-        if gapBeg <= repBeg and gapEnd >= repEnd:
-            return  # no alignment to the repeat: give up
-        if (gapEnd == repBeg or gapBeg == repEnd) and gapLen <= 0:
+        if (gapEnd <= repBeg or gapBeg >= repEnd) and gapLen <= 0:
             continue  # ignore deletions adjacent to the repeat
+        if opts.mode == "S":
+            if isInterAlignment and gapLen > 0:
+                return  # suspicious, unexpected insertion: give up
+            if gapEnd < repBeg or gapBeg > repEnd:
+                continue
+            if gapBeg <= repBeg and gapEnd >= repEnd:
+                return  # no alignment to the repeat: give up
         if gapBeg <= maxAlnBeg or gapEnd >= minAlnEnd:
             return  # a gap goes too far beyond the repeat: give up
         overlap = min(gapEnd, repEnd) - max(gapBeg, repBeg)
+        overlap = max(overlap, 0)
         myLen = max(gapLen, -overlap)  # don't count deletion beyond the repeat
         diff += numberOfPeriods(myLen, period)
     doAppend(copyNumberChanges, diff, queryName)
@@ -409,6 +411,8 @@ if __name__ == "__main__":
     op.add_option("-u", "--min-unit", type="int", default=2, metavar="BP",
                   help="ignore repeats with unit shorter than BP "
                   "(default=%default)")
+    op.add_option("--mode", default="S", metavar="LETTER",
+                  help="S=strict, L=lenient (default=%default)")
     op.add_option("-v", "--verbose", action="count", help="show more details")
     opts, args = op.parse_args()
     if not args:

@@ -12,6 +12,7 @@ Options:
                         only check tandem repeats that overlap these gene
                         parts: E=exons, I=introns (default=E)
   -u BP, --min-unit=BP  ignore repeats with unit shorter than BP (default=2)
+  --mode=LETTER         S=strict, L=lenient (default=S)
   -v, --verbose         show more details
 
 TEST tandem-genotypes microsat.txt nano.maf
