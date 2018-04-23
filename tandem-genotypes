@@ -57,6 +57,7 @@ def getInts(text):
         yield int(i)
 
 def genePartsFromLines(opts, lines):
+    utrs = "5'UTR", "3'UTR"
     parts = ("E" in opts.parts) + 2 * ("I" in opts.parts)
     for line in lines:
         fields = line.split()
@@ -66,25 +67,45 @@ def genePartsFromLines(opts, lines):
             chromEnd = int(fields[2])
             geneName = fields[3] if len(fields) > 3 else "."
             if len(fields) < 12:
-                yield chrom, chromBeg, chromEnd, geneName
+                yield chrom, chromBeg, chromEnd, geneName, "."
                 continue
+            strand = fields[5]
             exonBegs = [chromBeg + i for i in getInts(fields[11])]
             exonEnds = [i + j for i, j in zip(exonBegs, getInts(fields[10]))]
         else:  # genePred
             chrom = fields[2]
+            strand = fields[3]
             exonBegs = list(getInts(fields[9]))
             exonEnds = list(getInts(fields[10]))
             if len(fields) > 12:
                 geneName = fields[12]
             else:
                 geneName = fields[0]
+        cdsBeg = int(fields[6])
+        cdsEnd = int(fields[7])
+        if cdsBeg >= cdsEnd:
+            begUtr = endUtr = "exon"
+        elif strand == "-":
+            endUtr, begUtr = utrs
+        else:
+            begUtr, endUtr = utrs
         oldEnd = 0
         for beg, end in zip(exonBegs, exonEnds):
             if parts > 1 and oldEnd:
-                yield chrom, oldEnd, beg, geneName
+                yield chrom, oldEnd, beg, geneName, "intron"
             oldEnd = end
-            if parts % 2:
-                yield chrom, beg, end, geneName
+            if parts % 2 == 0:
+                continue
+            if beg < cdsBeg:
+                myEnd = min(end, cdsBeg)
+                yield chrom, beg, myEnd, geneName, begUtr
+            if end > cdsBeg and beg < cdsEnd:
+                myBeg = max(beg, cdsBeg)
+                myEnd = min(end, cdsEnd)
+                yield chrom, myBeg, myEnd, geneName, "coding"
+            if end > cdsEnd:
+                myBeg = max(beg, cdsEnd)
+                yield chrom, myBeg, end, geneName, endUtr
 
 def tandemRepeatsFromLines(opts, lines, geneParts):
     maxPartLength = maxRangeLength(geneParts)
