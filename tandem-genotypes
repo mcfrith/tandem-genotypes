@@ -52,6 +52,10 @@ def overlappingRanges(queryRange, sortedRanges, maxSortedRangeLength):
         yield i
         i += 1
 
+def getInts(text):
+    for i in text.rstrip(",").split(","):
+        yield int(i)
+
 def genePartsFromLines(opts, lines):
     parts = ("E" in opts.parts) + 2 * ("I" in opts.parts)
     for line in lines:
@@ -63,36 +67,27 @@ def genePartsFromLines(opts, lines):
             geneName = fields[3] if len(fields) > 3 else "."
             if len(fields) < 12 or parts == 3:
                 yield chrom, chromBeg, chromEnd, geneName
-            else:
-                exonLens = fields[10].rstrip(",").split(",")
-                exonBegs = fields[11].rstrip(",").split(",")
-                end = 0
-                for b, s in zip(exonBegs, exonLens):
-                    beg = chromBeg + int(b)
-                    if parts == 2 and end:
-                        yield chrom, end, beg, geneName
-                    end = beg + int(s)
-                    if parts == 1:
-                        yield chrom, beg, end, geneName
+                continue
+            exonBegs = [chromBeg + i for i in getInts(fields[11])]
+            exonEnds = [i + j for i, j in zip(exonBegs, getInts(fields[10]))]
         else:  # genePred
             chrom = fields[2]
-            exonBegs = fields[9].rstrip(",").split(",")
-            exonEnds = fields[10].rstrip(",").split(",")
+            exonBegs = list(getInts(fields[9]))
+            exonEnds = list(getInts(fields[10]))
             if len(fields) > 12:
                 geneName = fields[12]
             else:
                 geneName = fields[0]
             if parts == 3:
-                yield chrom, int(exonBegs[0]), int(exonEnds[-1]), geneName
-            else:
-                end = 0
-                for b, e in zip(exonBegs, exonEnds):
-                    beg = int(b)
-                    if parts == 2 and end:
-                        yield chrom, end, beg, geneName
-                    end = int(e)
-                    if parts == 1:
-                        yield chrom, beg, end, geneName
+                yield chrom, exonBegs[0], exonEnds[-1], geneName
+                continue
+        oldEnd = 0
+        for beg, end in zip(exonBegs, exonEnds):
+            if parts == 2 and oldEnd:
+                yield chrom, oldEnd, beg, geneName
+            oldEnd = end
+            if parts == 1:
+                yield chrom, beg, end, geneName
 
 def tandemRepeatsFromLines(opts, lines, geneParts):
     maxPartLength = maxRangeLength(geneParts)
