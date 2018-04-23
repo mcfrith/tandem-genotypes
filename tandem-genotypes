@@ -52,7 +52,7 @@ def overlappingRanges(queryRange, sortedRanges, maxSortedRangeLength):
         yield i
         i += 1
 
-def exonsFromLines(opts, lines):
+def genePartsFromLines(opts, lines):
     parts = ("E" in opts.parts) + 2 * ("I" in opts.parts)
     for line in lines:
         fields = line.split()
@@ -94,8 +94,8 @@ def exonsFromLines(opts, lines):
                     if parts == 1:
                         yield chrom, beg, end, geneName
 
-def tandemRepeatsFromLines(opts, lines, sortedExons):
-    maxExonLength = maxRangeLength(sortedExons)
+def tandemRepeatsFromLines(opts, lines, geneParts):
+    maxPartLength = maxRangeLength(geneParts)
     for line in lines:
         fields = line.split()
         if len(fields) == 5:  # microsat.txt
@@ -130,12 +130,12 @@ def tandemRepeatsFromLines(opts, lines, sortedExons):
             continue
         if opts.min_unit > 1 and len(set(unit)) == 1:  # idiot-proofing
             continue
-        if sortedExons is None:
+        if geneParts is None:
             geneNames = ["."]
         else:
             r = chrom, beg, end
-            exonNums = overlappingRanges(r, sortedExons, maxExonLength)
-            geneNames = sorted(set(sortedExons[i][3] for i in exonNums))
+            partNums = overlappingRanges(r, geneParts, maxPartLength)
+            geneNames = sorted(set(geneParts[i][3] for i in partNums))
             if not geneNames:
                 continue
         yield chrom, beg, end, unit, geneNames, []
@@ -372,12 +372,13 @@ def doOneMafFile(opts, tandemRepeats, maxRepeatLength, lines):
         doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, v)
 
 def tandemGenotypes(opts, args):
-    exons = None
+    geneParts = None
     if opts.genes:
-        exons = sorted(exonsFromLines(opts, openAndLog(opts, opts.genes)))
+        geneFile = openAndLog(opts, opts.genes)
+        geneParts = sorted(genePartsFromLines(opts, geneFile))
 
     repFile = openAndLog(opts, args[0])
-    tandemRepeats = sorted(tandemRepeatsFromLines(opts, repFile, exons))
+    tandemRepeats = sorted(tandemRepeatsFromLines(opts, repFile, geneParts))
     maxRepeatLength = maxRangeLength(tandemRepeats)
 
     fileNames = args[1:] if len(args) > 1 else ["-"]
