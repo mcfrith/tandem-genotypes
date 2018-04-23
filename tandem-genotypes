@@ -65,7 +65,7 @@ def genePartsFromLines(opts, lines):
             chromBeg = int(fields[1])
             chromEnd = int(fields[2])
             geneName = fields[3] if len(fields) > 3 else "."
-            if len(fields) < 12 or parts == 3:
+            if len(fields) < 12:
                 yield chrom, chromBeg, chromEnd, geneName
                 continue
             exonBegs = [chromBeg + i for i in getInts(fields[11])]
@@ -78,15 +78,12 @@ def genePartsFromLines(opts, lines):
                 geneName = fields[12]
             else:
                 geneName = fields[0]
-            if parts == 3:
-                yield chrom, exonBegs[0], exonEnds[-1], geneName
-                continue
         oldEnd = 0
         for beg, end in zip(exonBegs, exonEnds):
-            if parts == 2 and oldEnd:
+            if parts > 1 and oldEnd:
                 yield chrom, oldEnd, beg, geneName
             oldEnd = end
-            if parts == 1:
+            if parts % 2:
                 yield chrom, beg, end, geneName
 
 def tandemRepeatsFromLines(opts, lines, geneParts):
