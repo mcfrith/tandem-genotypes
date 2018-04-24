@@ -88,6 +88,14 @@ def genePartsFromLines(opts, lines):
             endUtr, begUtr = utrs
         else:
             begUtr, endUtr = utrs
+        if opts.promoter:
+            if strand == "-":
+                promBeg = exonEnds[-1]
+                promEnd = promBeg + opts.promoter
+            else:
+                promEnd = exonBegs[0]
+                promBeg = promEnd - opts.promoter  # might be negative
+            yield chrom, promBeg, promEnd, geneName, "promoter"
         oldEnd = 0
         for beg, end in zip(exonBegs, exonEnds):
             if opts.select < 2 and oldEnd:
@@ -426,6 +434,8 @@ if __name__ == "__main__":
     op = optparse.OptionParser(usage=usage, description=description)
     op.add_option("-g", "--genes", metavar="FILE",
                   help="read genes from a genePred or BED file")
+    op.add_option("-p", "--promoter", type="int", metavar="BP", default=300,
+                  help="promoter length (default=%default)")
     op.add_option("-s", "--select", type="int", metavar="N", default=2, help=
                   "select: all repeats (0), non-intergenic repeats (1), "
                   "non-intergenic non-intronic repeats (2) (default=%default)")

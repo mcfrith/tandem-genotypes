@@ -11,9 +11,9 @@ Then, do:
 
     tandem-genotypes -g refGene.txt microsat.txt alignments.maf
 
-This will check all tandem repeats in `microsat.txt` that overlap any
-exon in `refGene.txt`.  If you omit `-g refGene.txt`, it will check
-all tandem repeats.
+This will check all tandem repeats in `microsat.txt` that overlap
+exons or promoters of genes in `refGene.txt`.  If you omit `-g
+refGene.txt`, it will check all tandem repeats.
 
 ## Output
 
@@ -41,23 +41,25 @@ rmsk.txt, RepeatMasker .out.
 You can also supply repeats by the first 4 columns of the output
 format:
 
-    chr1    6370457 6370506 TAT
-    chr1    6708960 6709001 TC
+    chr22  41914573  41914611  GCGCGA
+    chr22  41994883  41994923  TG
 
 ## Gene input
 
 You can supply genes in these formats: refGene.txt, refFlat.txt,
 [BED](https://genome.ucsc.edu/FAQ/FAQformat.html#format1).
 
-If you supply a gene in BED format with < 12 columns, exon/intron
-information is absent: `tandem-genotypes` will check all tandem
-repeats that overlap the BED range.
+If you supply a gene in BED format with < 12 columns,
+`tandem-genotypes` won't consider exons/introns/promoters: it will
+check all tandem repeats that overlap the BED range.
 
 ## Options
 
 - `-h`, `--help`: show a help message and exit.
 
 - `-g FILE`, `--genes=FILE`: read genes from a genePred or BED file.
+
+- `-p BP`, `--promoter=BP`: promoter length (default=300).
 
 - `-s N`, `--select=N`: select: all repeats (0), non-intergenic
   repeats (1), non-intergenic non-intronic repeats (2) (default=2).
