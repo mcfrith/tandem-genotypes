@@ -58,7 +58,6 @@ def getInts(text):
 
 def genePartsFromLines(opts, lines):
     utrs = "5'UTR", "3'UTR"
-    parts = ("E" in opts.parts) + 2 * ("I" in opts.parts)
     for line in lines:
         fields = line.split()
         if len(fields) < 6 or fields[5] in "+-":  # BED
@@ -91,11 +90,9 @@ def genePartsFromLines(opts, lines):
             begUtr, endUtr = utrs
         oldEnd = 0
         for beg, end in zip(exonBegs, exonEnds):
-            if parts > 1 and oldEnd:
+            if opts.select < 2 and oldEnd:
                 yield chrom, oldEnd, beg, geneName, "intron"
             oldEnd = end
-            if parts % 2 == 0:
-                continue
             if beg < cdsBeg:
                 myEnd = min(end, cdsBeg)
                 yield chrom, beg, myEnd, geneName, begUtr
@@ -160,8 +157,8 @@ def tandemRepeatsFromLines(opts, lines, geneParts):
             r = chrom, beg, end
             partNums = overlappingRanges(r, geneParts, maxPartLength)
             geneInfo = geneInfoFromParts(geneParts, partNums)
-            if geneInfo[1] == "intergenic":
-                continue
+        if opts.select > 0 and geneInfo[1] == "intergenic":
+            continue
         yield chrom, beg, end, unit, geneInfo, []
 
 def alignmentsFromMaf(lines):
@@ -427,12 +424,11 @@ if __name__ == "__main__":
     usage = "%prog [options] microsat.txt alignments.maf"
     description = "Try to indicate genotypes of tandem repeats."
     op = optparse.OptionParser(usage=usage, description=description)
-    op.add_option("-g", "--genes", metavar="FILE", help=
-                  "only check tandem repeats that overlap genes "
-                  "in a genePred or BED file")
-    op.add_option("-p", "--parts", metavar="LETTERS", default="E", help=
-                  "only check tandem repeats that overlap these gene parts: "
-                  "E=exons, I=introns (default=%default)")
+    op.add_option("-g", "--genes", metavar="FILE",
+                  help="read genes from a genePred or BED file")
+    op.add_option("-s", "--select", type="int", metavar="N", default=2, help=
+                  "select: all repeats (0), non-intergenic repeats (1), "
+                  "non-intergenic non-intronic repeats (2) (default=%default)")
     op.add_option("-u", "--min-unit", type="int", default=2, metavar="BP",
                   help="ignore repeats with unit shorter than BP "
                   "(default=%default)")

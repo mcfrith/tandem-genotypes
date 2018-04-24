@@ -6,11 +6,9 @@ Try to indicate genotypes of tandem repeats.
 Options:
   -h, --help            show this help message and exit
   -g FILE, --genes=FILE
-                        only check tandem repeats that overlap genes in a
-                        genePred or BED file
-  -p LETTERS, --parts=LETTERS
-                        only check tandem repeats that overlap these gene
-                        parts: E=exons, I=introns (default=E)
+                        read genes from a genePred or BED file
+  -s N, --select=N      select: all repeats (0), non-intergenic repeats (1),
+                        non-intergenic non-intronic repeats (2) (default=2)
   -u BP, --min-unit=BP  ignore repeats with unit shorter than BP (default=2)
   --mode=LETTER         S=strict, L=lenient (default=S)
   -v, --verbose         show more details
@@ -54,16 +52,28 @@ chr22	41994883	41994923	TG	SEPT3	3'UTR	-16 -14 -13 -13 -13 -13 -12 -11 -10 -10  
 chr22	41997631	41997667	CAAA	SEPT3	3'UTR	 -2  -1  -1  -1  -1  -1  -1  -1   0   0   0   0   0   0   0   0   0   0   0   1   1
 chr22	41997742	41997789	CTTCCCC	SEPT3	3'UTR	 -2  -2  -1  -1  -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0
 
-TEST tandem-genotypes -pI -g refFlat.txt simpleRepeat.txt nano.maf
-# tandem-genotypes -pI -g refFlat.txt simpleRepeat.txt nano.maf
+TEST tandem-genotypes -s0 -g refFlat.txt simpleRepeat.txt nano.maf
+# tandem-genotypes -s0 -g refFlat.txt simpleRepeat.txt nano.maf
+chr22	41915069	41915109	GCTCCG	.	intergenic	 -2  -1  -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+chr22	41916394	41916426	ACACACACATGT	.	intergenic	 -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+chr22	41916925	41916952	AAACAAAAAAAAAA	.	intergenic	 -2  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1   0   1
+chr22	41922641	41922755	AGATGGGGTGGCCAGGAGA	.	intergenic	 -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+chr22	41922713	41922797	AGATGGGGTGGG	.	intergenic	 -1  -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+chr22	41926181	41926216	CCAGGACCAGCG	TNFRSF13C	coding	 -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+chr22	41929081	41929146	GGTGTGGGTGAGCGTG	.	intergenic	 -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
 chr22	41939778	41939907	AAAG	CENPM	intron	141 148 151 156 192 209 225 225 226 229 234 241 246 267
+chr22	41958483	41958508	GA	LINC00634	exon	-10  -9  -8  -8  -8  -8  -8  -7  -4  -4  -3  -3  -3  -2  -2  -2  -2  -2  -2  -1  -1  -1  -1   0   1
+chr22	41959510	41959535	AAACA	.	intergenic	 -1  -1  -1  -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+chr22	41961159	41961203	TTTA	.	intergenic	 -2  -2  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1   0   0   0   0   0   0   0   0
+chr22	41961665	41961701	TTTTTTTTCTGTTTTTTG	.	intergenic	 -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1
+chr22	41962342	41962394	TTTCCTTTTTTTTTTTTTCTTTTTTCT	.	intergenic	 -2  -2  -2  -2  -2  -2  -2  -2  -2  -2  -2  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1  -1
 chr22	41978893	41978931	GGA	SEPT3	intron	 -9  -8  -5  -3  -3  -3  -2  -2  -1  -1   0   0   0   0   1   1   1   1
 chr22	41982508	41982533	AAAACAA	SEPT3	intron	 -2  -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
 chr22	41991062	41991093	CAAA	SEPT3	intron	 -1  -1  -1  -1  -1  -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
-chr22	41994883	41994923	TG	SEPT3	intron	-16 -14 -13 -13 -13 -13 -12 -11 -10 -10  -7  -7  -7  -4  -3  -1   0   0   0   1   2   3
+chr22	41994883	41994923	TG	SEPT3	3'UTR	-16 -14 -13 -13 -13 -13 -12 -11 -10 -10  -7  -7  -7  -4  -3  -1   0   0   0   1   2   3
 
-TEST tandem-genotypes -pEI -g refFlat.txt simpleRepeat.txt nano.maf
-# tandem-genotypes -pEI -g refFlat.txt simpleRepeat.txt nano.maf
+TEST tandem-genotypes -s1 -g refFlat.txt simpleRepeat.txt nano.maf
+# tandem-genotypes -s1 -g refFlat.txt simpleRepeat.txt nano.maf
 chr22	41926181	41926216	CCAGGACCAGCG	TNFRSF13C	coding	 -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
 chr22	41939778	41939907	AAAG	CENPM	intron	141 148 151 156 192 209 225 225 226 229 234 241 246 267
 chr22	41958483	41958508	GA	LINC00634	exon	-10  -9  -8  -8  -8  -8  -8  -7  -4  -4  -3  -3  -3  -2  -2  -2  -2  -2  -2  -1  -1  -1  -1   0   1
@@ -83,17 +93,19 @@ TEST tandem-genotypes far.bed far.maf
 # tandem-genotypes far.bed far.maf
 chr3	63912686	63912715	CAG	.	.	 64
 
-TEST tandem-genotypes -u1 -pI -g refFlat.txt simpleRepeat.txt nano.maf
-# tandem-genotypes -u1 -pI -g refFlat.txt simpleRepeat.txt nano.maf
+TEST tandem-genotypes -u1 -s1 -g refFlat.txt simpleRepeat.txt nano.maf
+# tandem-genotypes -u1 -s1 -g refFlat.txt simpleRepeat.txt nano.maf
+chr22	41926181	41926216	CCAGGACCAGCG	TNFRSF13C	coding	 -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
 chr22	41939778	41939907	AAAG	CENPM	intron	141 148 151 156 192 209 225 225 226 229 234 241 246 267
 chr22	41953740	41953768	T	LINC00634	intron	-27 -25 -24 -24 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -23 -22
 chr22	41957181	41957208	T	LINC00634	intron	-25 -23 -23 -23 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -22 -20
+chr22	41958483	41958508	GA	LINC00634	exon	-10  -9  -8  -8  -8  -8  -8  -7  -4  -4  -3  -3  -3  -2  -2  -2  -2  -2  -2  -1  -1  -1  -1   0   1
 chr22	41978893	41978931	GGA	SEPT3	intron	 -9  -8  -5  -3  -3  -3  -2  -2  -1  -1   0   0   0   0   1   1   1   1
 chr22	41980129	41980155	T	SEPT3	intron	-24 -23 -22 -22 -22 -21 -21 -21 -21 -21 -21 -21 -21 -21 -21 -21 -20
 chr22	41982508	41982533	AAAACAA	SEPT3	intron	 -2  -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
 chr22	41984845	41984870	T	SEPT3	intron	-24 -23 -23 -21 -21 -21 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -20 -19 -19 -18
 chr22	41991062	41991093	CAAA	SEPT3	intron	 -1  -1  -1  -1  -1  -1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
-chr22	41994883	41994923	TG	SEPT3	intron	-16 -14 -13 -13 -13 -13 -12 -11 -10 -10  -7  -7  -7  -4  -3  -1   0   0   0   1   2   3
+chr22	41994883	41994923	TG	SEPT3	3'UTR	-16 -14 -13 -13 -13 -13 -12 -11 -10 -10  -7  -7  -7  -4  -3  -1   0   0   0   1   2   3
 
 TEST tandem-genotypes -u3 -g refFlat.txt simpleRepeat.txt nano.maf
 # tandem-genotypes -u3 -g refFlat.txt simpleRepeat.txt nano.maf
