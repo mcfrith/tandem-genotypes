@@ -127,15 +127,19 @@ def tandemRepeatsFromLines(opts, lines, geneParts):
     maxPartLength = maxRangeLength(geneParts)
     for line in lines:
         fields = line.split()
-        if len(fields) == 5:  # microsat.txt
-            fields.pop(0)
-        if len(fields) == 4:
+        geneInfo = None
+        if len(fields) > 3 and len(fields) < 7:  # BED-like
+            if fields[3].isdigit():  # microsat.txt
+                fields.pop(0)
             unit = fields[3]
             if "x" in unit:
                 repeatCount, unit = unit.split("x")
             chrom = fields[0]
             beg = int(fields[1])
             end = int(fields[2])
+            if len(fields) > 4:
+                genePartType = fields[5] if len(fields) > 5 else "."
+                geneInfo = fields[4], genePartType
         elif len(fields) == 17 and fields[4] == "trf":  # simpleRepeat.txt
             unit = fields[16]
             if int(fields[5]) != len(unit) or int(fields[7]) != len(unit):
@@ -159,13 +163,16 @@ def tandemRepeatsFromLines(opts, lines, geneParts):
             continue
         if opts.min_unit > 1 and len(set(unit)) == 1:  # idiot-proofing
             continue
-        if geneParts is None:
-            geneInfo = ".", "."
-        else:
-            r = chrom, beg, end
-            partNums = overlappingRanges(r, geneParts, maxPartLength)
-            geneInfo = geneInfoFromParts(geneParts, partNums)
+        if not geneInfo:
+            if geneParts is None:
+                geneInfo = ".", "."
+            else:
+                r = chrom, beg, end
+                partNums = overlappingRanges(r, geneParts, maxPartLength)
+                geneInfo = geneInfoFromParts(geneParts, partNums)
         if opts.select > 0 and geneInfo[1] == "intergenic":
+            continue
+        if opts.select > 1 and geneInfo[1] == "intron":
             continue
         yield chrom, beg, end, unit, geneInfo, []
 

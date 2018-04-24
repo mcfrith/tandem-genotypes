@@ -38,8 +38,8 @@ can be obtained at the [UCSC genome
 database](http://genome.ucsc.edu/)): microsat.txt, simpleRepeat.txt,
 rmsk.txt, RepeatMasker .out.
 
-You can also supply repeats by the first 4 columns of the output
-format:
+You can also supply repeats by the first 4 (or 5, or 6) columns of the
+output format:
 
     chr22  41914573  41914611  GCGCGA
     chr22  41994883  41994923  TG
