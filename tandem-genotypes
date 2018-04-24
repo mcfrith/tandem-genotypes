@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 # Copyright 2018 Martin C. Frith
 
+from __future__ import print_function
+
 import bisect
 import gzip
 import itertools
@@ -433,7 +435,7 @@ def tandemGenotypes(opts, args):
         doOneMafFile(opts, tandemRepeats, maxRepeatLength, openAndLog(opts, i))
 
     prog = os.path.basename(sys.argv[0])
-    print "#", prog, " ".join(sys.argv[1:])
+    print("#", prog, " ".join(sys.argv[1:]))
 
     for chrom, beg, end, unit, geneInfo, copyNumberChanges in tandemRepeats:
         if copyNumberChanges and any(i[1] for i in copyNumberChanges):
@@ -441,7 +443,7 @@ def tandemGenotypes(opts, args):
             rev = (i for i in copyNumberChanges if i[0] == "-")
             changes = changeText(opts, fwd) + "\t" + changeText(opts, rev)
             out = chrom, str(beg), str(end), unit, "\t".join(geneInfo), changes
-            print "\t".join(out)
+            print("\t".join(out))
 
 if __name__ == "__main__":
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # avoid silly error message
