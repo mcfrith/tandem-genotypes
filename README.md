@@ -49,7 +49,10 @@ If you are using the "hg38" human genome, you can supply repeats with
 the included file `hg38-disease-tr.txt`, which has a few
 disease-associated repeats:
 
-    tandem-genotypes hg38-disease-tr.txt alignments.maf
+    tandem-genotypes -s0 hg38-disease-tr.txt alignments.maf
+
+The `-s0` makes it check all the repeats.  (By default, it skips
+repeats annotated "intron" or "intergenic".)
 
 ## Gene input
 
@@ -59,9 +62,6 @@ You can supply genes in these formats: refGene.txt, refFlat.txt,
 If you supply a gene in BED format with < 12 columns,
 `tandem-genotypes` won't consider exons/introns/promoters: it will
 check all tandem repeats that overlap the BED range.
-
-`tandem-genotypes` ignores intergenic and intronic repeats by default,
-but you can change this with the `-s` option.
 
 ## Options
 
