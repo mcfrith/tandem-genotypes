@@ -67,6 +67,6 @@ check all tandem repeats that overlap the BED range.
 - `-u BP`, `--min-unit=BP`: ignore repeats with unit shorter than BP
   (default=2).
 
-- `--mode=LETTER`: S=strict, L=lenient (default=S).
+- `--mode=LETTER`: L=lenient, S=strict (default=L).
 
 - `-v`, `--verbose`: show more details.

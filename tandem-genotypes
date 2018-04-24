@@ -449,8 +449,8 @@ if __name__ == "__main__":
     op.add_option("-u", "--min-unit", type="int", default=2, metavar="BP",
                   help="ignore repeats with unit shorter than BP "
                   "(default=%default)")
-    op.add_option("--mode", default="S", metavar="LETTER",
-                  help="S=strict, L=lenient (default=%default)")
+    op.add_option("--mode", default="L", metavar="LETTER",
+                  help="L=lenient, S=strict (default=%default)")
     op.add_option("-v", "--verbose", action="count", help="show more details")
     opts, args = op.parse_args()
     if not args:
