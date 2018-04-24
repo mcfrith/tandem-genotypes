@@ -44,17 +44,17 @@ repeats that overlap any BED range (ignoring `-p`).
 
 The output looks like this:
 
-    chr22  41914573  41914611  GCGCGA  SHISA8  -2 -2 -2 -2  0  0  0  0  0
-    chr22  41994883  41994923  TG      SEPT3   -7 -3 -3 -1 -1  0  0
+    chr22  41914573  41914611  GCGCGA  SHISA8  coding  -2 -2 -2 -2  0  0  0  0
+    chr22  41994883  41994923  TG      SEPT3   3'UTR   -7 -3 -3 -1 -1  0  0
 
 Each line shows one tandem repeat.  The first 3 columns show its
 location in [BED3](https://genome.ucsc.edu/FAQ/FAQformat.html#format1)
 format, column 4 shows the repeating unit, column 5 shows the gene
-name.  The remaining numbers show the copy number change in each
-alignment that covers the repeat: for example -2 means the aligned
-read has 2 fewer copies than the reference.  Here, the first line is a
-nice example with 2 clear alleles, and the second line is a nasty
-example without clear alleles.
+name, and column 6 the gene part.  The remaining numbers show the copy
+number change in each alignment that covers the repeat: for example -2
+means the aligned read has 2 fewer copies than the reference.  Here,
+the first line is a nice example with 2 clear alleles, and the second
+line is a nasty example without clear alleles.
 
 ## Options
 

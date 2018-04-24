@@ -107,6 +107,17 @@ def genePartsFromLines(opts, lines):
                 myBeg = max(beg, cdsEnd)
                 yield chrom, myBeg, end, geneName, endUtr
 
+def geneInfoFromParts(geneParts, partNums):
+    parts = [geneParts[i] for i in partNums]
+    if not parts:
+        return ".", "intergenic"
+    types = [i[4] for i in parts]
+    for t in ".", "coding", "5'UTR", "3'UTR", "exon", "promoter", "intron":
+        if t in types:
+            names = ",".join(sorted(set(i[3] for i in parts if i[4] == t)))
+            return names, t
+    assert False
+
 def tandemRepeatsFromLines(opts, lines, geneParts):
     maxPartLength = maxRangeLength(geneParts)
     for line in lines:
@@ -144,14 +155,14 @@ def tandemRepeatsFromLines(opts, lines, geneParts):
         if opts.min_unit > 1 and len(set(unit)) == 1:  # idiot-proofing
             continue
         if geneParts is None:
-            geneNames = ["."]
+            geneInfo = ".", "."
         else:
             r = chrom, beg, end
             partNums = overlappingRanges(r, geneParts, maxPartLength)
-            geneNames = sorted(set(geneParts[i][3] for i in partNums))
-            if not geneNames:
+            geneInfo = geneInfoFromParts(geneParts, partNums)
+            if geneInfo[1] == "intergenic":
                 continue
-        yield chrom, beg, end, unit, geneNames, []
+        yield chrom, beg, end, unit, geneInfo, []
 
 def alignmentsFromMaf(lines):
     alignment = []
@@ -278,7 +289,7 @@ def doAppend(copyNumberChanges, change, queryName):
 
 def appendCopyNumberChange(opts, tandemRepeat, gaps, queryName):
     """Estimate copy number change from alignment gaps: crude and ad hoc"""
-    chrom, repBeg, repEnd, unit, geneNames, copyNumberChanges = tandemRepeat
+    chrom, repBeg, repEnd, unit, geneInfo, copyNumberChanges = tandemRepeat
     repLen = repEnd - repBeg
     minAlignedFlank = (repLen + 1) // 2
     maxAlnBeg = repBeg - minAlignedFlank
@@ -401,14 +412,14 @@ def tandemGenotypes(opts, args):
     prog = os.path.basename(sys.argv[0])
     print "#", prog, " ".join(sys.argv[1:])
 
-    for chrom, beg, end, unit, geneNames, copyNumberChanges in tandemRepeats:
+    for chrom, beg, end, unit, geneInfo, copyNumberChanges in tandemRepeats:
         if copyNumberChanges and any(i[0] for i in copyNumberChanges):
             s = sorted(copyNumberChanges)
             if opts.verbose:
                 changes = " ".join(str(i[0]) + ":" + i[1] for i in s)
             else:
                 changes = " ".join("%3d" % i[0] for i in s)
-            out = chrom, str(beg), str(end), unit, ",".join(geneNames), changes
+            out = chrom, str(beg), str(end), unit, "\t".join(geneInfo), changes
             print "\t".join(out)
 
 if __name__ == "__main__":
