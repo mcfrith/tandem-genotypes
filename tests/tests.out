@@ -127,3 +127,7 @@ TEST tandem-genotypes ../hg38-disease-tr.txt far.maf
 # tandem-genotypes ../hg38-disease-tr.txt far.maf
 chr3	63912684	63912716	GCA	ATXN7:SCA7	coding	64	.
 
+TEST sed 's/chr//' far.maf | tandem-genotypes far.bed
+# tandem-genotypes far.bed
+chr3	63912686	63912715	CAG	.	.	64	.
+

@@ -389,8 +389,15 @@ def repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns):
     for joinedAln in joinedAlns:
         headAln = joinedAln[0]
         tailAln = joinedAln[-1]
-        r = refSeqName(headAln), refSeqBeg(headAln), refSeqEnd(tailAln)
-        yield set(overlappingRanges(r, tandemRepeats, maxRepeatLength))
+        n = refSeqName(headAln)
+        b = refSeqBeg(headAln)
+        e = refSeqEnd(tailAln)
+        r = n, b, e
+        s = set(overlappingRanges(r, tandemRepeats, maxRepeatLength))
+        if not s and not n.startswith("chr"):
+            r = "chr" + n, b, e
+            s = set(overlappingRanges(r, tandemRepeats, maxRepeatLength))
+        yield s
 
 def gapsPerJoinedAln(joinedAlns, isNeeded):
     for i, j in zip(joinedAlns, isNeeded):
