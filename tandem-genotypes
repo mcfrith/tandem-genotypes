@@ -295,11 +295,11 @@ def numberOfPeriods(gapLength, repeatPeriod):  # crude
         return -numberOfPeriods(-gapLength, repeatPeriod)
     return (gapLength + (repeatPeriod - 1) // 2) // repeatPeriod
 
-def doAppend(copyNumberChanges, change, queryName):
-    t = change, queryName
+def doAppend(copyNumberChanges, strand, change, queryName):
+    t = strand, change, queryName
     copyNumberChanges.append(t)
 
-def appendCopyNumberChange(opts, tandemRepeat, gaps, queryName):
+def appendCopyNumberChange(opts, tandemRepeat, gaps, strand, queryName):
     """Estimate copy number change from alignment gaps: crude and ad hoc"""
     chrom, repBeg, repEnd, unit, geneInfo, copyNumberChanges = tandemRepeat
     repLen = repEnd - repBeg
@@ -326,7 +326,7 @@ def appendCopyNumberChange(opts, tandemRepeat, gaps, queryName):
         overlap = max(overlap, 0)
         myLen = max(gapLen, -overlap)  # don't count deletion beyond the repeat
         diff += numberOfPeriods(myLen, period)
-    doAppend(copyNumberChanges, diff, queryName)
+    doAppend(copyNumberChanges, strand, diff, queryName)
 
 def joinedAlnNumsPerRepeat(repNumsPerJoinedAln, repNum):
     for i, x in enumerate(repNumsPerJoinedAln):
@@ -360,7 +360,8 @@ def doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums):
         return
     queryName = qrySeqName(joinedAlnA[0])
     if len(myJoinedAlns) == 1:
-        appendCopyNumberChange(opts, rep, gaps[joinedAlnNums[0]], queryName)
+        myGaps = gaps[joinedAlnNums[0]]
+        appendCopyNumberChange(opts, rep, myGaps, strand, queryName)
     else:
         tooFar = repLen * 3  # xxx ???
         badBeg = max(alnBegA, repBeg - tooFar)
@@ -378,7 +379,7 @@ def doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums):
         insertionSize = (qrySeqBeg(headAlnZ) - qrySeqEnd(tailAlnA) +
                          refSeqEnd(tailAlnA) - refSeqBeg(headAlnZ))
         change = numberOfPeriods(insertionSize, len(rep[3]))
-        doAppend(rep[5], change, queryName)
+        doAppend(rep[5], strand, change, queryName)
 
 def repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns):
     for joinedAln in joinedAlns:
@@ -407,6 +408,16 @@ def doOneMafFile(opts, tandemRepeats, maxRepeatLength, lines):
     for k, v in itertools.groupby(alignments, qrySeqName):
         doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, v)
 
+def oneChangeText(opts, change):
+    text = str(change[1])
+    if opts.verbose:
+        text += ":" + change[2]
+    return text
+
+def changeText(opts, copyNumberChanges):
+    t = ",".join(oneChangeText(opts, i) for i in sorted(copyNumberChanges))
+    return t if t else "."
+
 def tandemGenotypes(opts, args):
     geneParts = None
     if opts.genes:
@@ -425,12 +436,10 @@ def tandemGenotypes(opts, args):
     print "#", prog, " ".join(sys.argv[1:])
 
     for chrom, beg, end, unit, geneInfo, copyNumberChanges in tandemRepeats:
-        if copyNumberChanges and any(i[0] for i in copyNumberChanges):
-            s = sorted(copyNumberChanges)
-            if opts.verbose:
-                changes = " ".join(str(i[0]) + ":" + i[1] for i in s)
-            else:
-                changes = " ".join("%3d" % i[0] for i in s)
+        if copyNumberChanges and any(i[1] for i in copyNumberChanges):
+            fwd = (i for i in copyNumberChanges if i[0] != "-")
+            rev = (i for i in copyNumberChanges if i[0] == "-")
+            changes = changeText(opts, fwd) + "\t" + changeText(opts, rev)
             out = chrom, str(beg), str(end), unit, "\t".join(geneInfo), changes
             print "\t".join(out)
 
