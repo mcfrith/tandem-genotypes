@@ -123,3 +123,7 @@ chr22	41926181	41926216	CCAGGACCAGCG	TNFRSF13C	coding	-1,0,0,0,0,0,0	0,0,0,0,0,0
 chr22	41958483	41958508	GA	LINC00634	exon	-10,-9,-8,-8,-8,-8,-8,-4	-4,-4,-3,-3,-3,-2,-2,-2,-2,-2,-2,-1,-1,-1,-1,0,1
 chr22	41994883	41994923	TG	SEPT3	3'UTR	-7,-7,-4,-3,-1,0,0,0,1,2,3	-16,-14,-13,-13,-13,-12,-12,-11,-9,-8,-7
 
+TEST tandem-genotypes ../hg38-disease-tr.txt far.maf
+# tandem-genotypes ../hg38-disease-tr.txt far.maf
+chr3	63912684	63912716	GCA	ATXN7:SCA7	coding	64	.
+

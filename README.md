@@ -45,6 +45,12 @@ output format:
     chr22  41914573  41914611  GCGCGA
     chr22  41994883  41994923  TG
 
+If you are using the "hg38" human genome, you can supply repeats with
+the included file `hg38-disease-tr.txt`, which has a few
+disease-associated repeats:
+
+    tandem-genotypes hg38-disease-tr.txt alignments.maf
+
 ## Gene input
 
 You can supply genes in these formats: refGene.txt, refFlat.txt,
