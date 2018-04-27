@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import bisect
+import collections
 import gzip
 import itertools
 import optparse
@@ -369,8 +370,10 @@ def doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums):
         return
     queryName = qrySeqName(joinedAlnA[0])
     if len(myJoinedAlns) == 1:
-        myGaps = gaps[joinedAlnNums[0]]
-        appendCopyNumberChange(opts, rep, myGaps, strand, queryName)
+        n = joinedAlnNums[0]
+        if isinstance(gaps[n], collections.Iterator):
+            gaps[n] = list(gaps[n])
+        appendCopyNumberChange(opts, rep, gaps[n], strand, queryName)
     else:
         tooFar = repLen * 3  # xxx ???
         badBeg = max(alnBegA, repBeg - tooFar)
@@ -404,15 +407,11 @@ def repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns):
             s = set(overlappingRanges(r, tandemRepeats, maxRepeatLength))
         yield s
 
-def gapsPerJoinedAln(joinedAlns, isNeeded):
-    for i, j in zip(joinedAlns, isNeeded):
-        yield list(gapsFromColinearAlignments(i)) if j else None
-
 def doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, alignments):
     joinedAlns = list(colinearAlignmentGroups(alignments))
     g = repeatNumsPerJoinedAln(tandemRepeats, maxRepeatLength, joinedAlns)
     repNumsPerJoinedAln = list(g)
-    gaps = list(gapsPerJoinedAln(joinedAlns, repNumsPerJoinedAln))
+    gaps = [gapsFromColinearAlignments(i) for i in joinedAlns]
     repNums = set(itertools.chain.from_iterable(repNumsPerJoinedAln))
     for i in repNums:
         rep = tandemRepeats[i]
