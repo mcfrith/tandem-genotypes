@@ -7,6 +7,9 @@ Options:
   -h, --help            show this help message and exit
   -g FILE, --genes=FILE
                         read genes from a genePred or BED file
+  -m PROB, --mismap=PROB
+                        ignore any alignment with mismap probability > PROB
+                        (default=1e-06)
   -p BP, --promoter=BP  promoter length (default=300)
   -s N, --select=N      select: all repeats (0), non-intergenic repeats (1),
                         non-intergenic non-intronic repeats (2) (default=2)

@@ -69,12 +69,15 @@ check all tandem repeats that overlap the BED range.
 
 - `-g FILE`, `--genes=FILE`: read genes from a genePred or BED file.
 
+- `-m PROB`, `--mismap=PROB`: ignore any alignment with mismap
+  probability > `PROB` (default=1e-6).
+
 - `-p BP`, `--promoter=BP`: promoter length (default=300).
 
 - `-s N`, `--select=N`: select: all repeats (0), non-intergenic
   repeats (1), non-intergenic non-intronic repeats (2) (default=2).
 
-- `-u BP`, `--min-unit=BP`: ignore repeats with unit shorter than BP
+- `-u BP`, `--min-unit=BP`: ignore repeats with unit shorter than `BP`
   (default=2).
 
 - `--mode=LETTER`: L=lenient, S=strict (default=L).

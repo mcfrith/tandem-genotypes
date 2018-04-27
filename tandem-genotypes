@@ -180,10 +180,15 @@ def tandemRepeatsFromLines(opts, lines, geneParts):
             continue
         yield chrom, beg, end, unit, geneInfo, []
 
-def alignmentsFromMaf(lines):
+def alignmentsFromMaf(opts, lines):
     alignment = []
     for line in lines:
-        if line[0] == "s":
+        if line[0] == "a":
+            mismap = 0.0
+            for i in line.split():
+                if i.startswith("mismap="):
+                    mismap = float(i[7:])
+        elif line[0] == "s" and mismap <= opts.mismap:
             fields = line.split()
             seqName = fields[1]
             beg = int(fields[2])
@@ -415,7 +420,7 @@ def doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, alignments):
         doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums)
 
 def doOneMafFile(opts, tandemRepeats, maxRepeatLength, lines):
-    alignments = alignmentsFromMaf(lines)
+    alignments = alignmentsFromMaf(opts, lines)
     for k, v in itertools.groupby(alignments, qrySeqName):
         doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, v)
 
@@ -461,6 +466,9 @@ if __name__ == "__main__":
     op = optparse.OptionParser(usage=usage, description=description)
     op.add_option("-g", "--genes", metavar="FILE",
                   help="read genes from a genePred or BED file")
+    op.add_option("-m", "--mismap", type="float", default=1e-6, metavar="PROB",
+                  help="ignore any alignment with mismap probability > PROB "
+                  "(default=%default)")
     op.add_option("-p", "--promoter", type="int", metavar="BP", default=300,
                   help="promoter length (default=%default)")
     op.add_option("-s", "--select", type="int", metavar="N", default=2, help=
