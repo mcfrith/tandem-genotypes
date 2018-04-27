@@ -45,9 +45,9 @@ output format:
     chr22  41914573  41914611  GCGCGA
     chr22  41994883  41994923  TG
 
-If you are using the "hg38" human genome, you can supply repeats with
-the included file `hg38-disease-tr.txt`, which has a few
-disease-associated repeats:
+If you are using the "hg19" or "hg38" human genome, you can supply
+repeats with the included files `hg19-disease-tr.txt` and
+`hg38-disease-tr.txt`, which have a few disease-associated repeats:
 
     tandem-genotypes -s0 hg38-disease-tr.txt alignments.maf
 
