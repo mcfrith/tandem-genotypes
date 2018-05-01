@@ -321,8 +321,12 @@ def appendCopyNumberChange(opts, tandemRepeat, gaps, strand, queryName):
     for gapBeg, gapEnd, gapLen, isInterAlignment in gaps:
         if gapEnd <= maxAlnBeg or gapBeg >= minAlnEnd:
             continue
-        if (gapEnd <= repBeg or gapBeg >= repEnd) and gapLen <= 0:
-            continue  # ignore deletions adjacent to the repeat
+        if gapEnd <= repBeg or gapBeg >= repEnd:
+            insSize = gapLen + (gapEnd - gapBeg)
+            if insSize <= period // 2:
+                # ignore deletions adjacent to the repeat
+                # also, ignore negligible insertions near the repeat
+                continue
         if opts.mode == "S":
             if isInterAlignment and gapLen > 0:
                 return  # suspicious, unexpected insertion: give up
