@@ -470,7 +470,7 @@ if __name__ == "__main__":
                   "(default=%default)")
     op.add_option("-p", "--promoter", type="int", metavar="BP", default=300,
                   help="promoter length (default=%default)")
-    op.add_option("-s", "--select", type="int", metavar="N", default=2, help=
+    op.add_option("-s", "--select", type="int", metavar="N", default=0, help=
                   "select: all repeats (0), non-intergenic repeats (1), "
                   "non-intergenic non-intronic repeats (2) (default=%default)")
     op.add_option("-u", "--min-unit", type="int", default=2, metavar="BP",

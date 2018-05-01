@@ -11,9 +11,9 @@ Then, do:
 
     tandem-genotypes -g refGene.txt microsat.txt alignments.maf
 
-This will check all tandem repeats in `microsat.txt` that overlap
-exons or promoters of genes in `refGene.txt`.  If you omit `-g
-refGene.txt`, it will check all tandem repeats.
+This will check the tandem repeats in `microsat.txt`, and annotate
+them with the genes in `refGene.txt`.  (It's OK to omit `-g
+refGene.txt`.)
 
 ## Output
 
@@ -49,19 +49,14 @@ If you are using the "hg19" or "hg38" human genome, you can supply
 repeats with the included files `hg19-disease-tr.txt` and
 `hg38-disease-tr.txt`, which have a few disease-associated repeats:
 
-    tandem-genotypes -s0 hg38-disease-tr.txt alignments.maf
+    tandem-genotypes hg38-disease-tr.txt alignments.maf
 
-The `-s0` makes it check all the repeats.  (By default, it skips
-repeats annotated "intron" or "intergenic".)
+These files include gene annotations.
 
 ## Gene input
 
 You can supply genes in these formats: refGene.txt, refFlat.txt,
 [BED](https://genome.ucsc.edu/FAQ/FAQformat.html#format1).
-
-If you supply a gene in BED format with < 12 columns,
-`tandem-genotypes` won't consider exons/introns/promoters: it will
-check all tandem repeats that overlap the BED range.
 
 ## Options
 
@@ -72,10 +67,11 @@ check all tandem repeats that overlap the BED range.
 - `-m PROB`, `--mismap=PROB`: ignore any alignment with mismap
   probability > `PROB` (default=1e-6).
 
-- `-p BP`, `--promoter=BP`: promoter length (default=300).
+- `-p BP`, `--promoter=BP`: promoter length (default=300).  This is
+  used for gene annotation.
 
 - `-s N`, `--select=N`: select: all repeats (0), non-intergenic
-  repeats (1), non-intergenic non-intronic repeats (2) (default=2).
+  repeats (1), non-intergenic non-intronic repeats (2) (default=0).
 
 - `-u BP`, `--min-unit=BP`: ignore repeats with unit shorter than `BP`
   (default=2).
