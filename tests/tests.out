@@ -128,7 +128,7 @@ chr22	41994883	41994923	TG	SEPT3	3'UTR	-7,-7,-4,-3,-1,0,0,0,1,2,3	-16,-14,-13,-1
 
 TEST tandem-genotypes ../hg38-disease-tr.txt far.maf
 # tandem-genotypes ../hg38-disease-tr.txt far.maf
-chr3	63912684	63912716	GCA	ATXN7:SCA7	coding	64	.
+chr3	63912685	63912715	GCA	ATXN7:SCA7:24	coding	64	.
 
 TEST sed 's/chr//' far.maf | tandem-genotypes far.bed
 # tandem-genotypes far.bed
