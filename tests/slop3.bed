@@ -1,1 +1,2 @@
-chr9	27573529	27573546	GGGGCC
+# tandem-genotypes slop3.bed slop3.maf
+chr9	27573529	27573546	GGGGCC	.	.	.	16

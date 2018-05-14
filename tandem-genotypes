@@ -138,7 +138,7 @@ def tandemRepeatsFromLines(opts, lines, geneParts):
         if not fields or fields[0][0] == "#":
             continue
         geneInfo = None
-        if len(fields) > 3 and len(fields) < 7:  # BED-like
+        if len(fields) > 3 and len(fields) < 9:  # BED-like
             if fields[3].isdigit():  # microsat.txt
                 fields.pop(0)
             unit = fields[3]
