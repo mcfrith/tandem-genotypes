@@ -12,6 +12,11 @@ import os
 import signal
 import sys
 
+try:
+    from future_builtins import zip
+except ImportError:
+    pass
+
 def myOpen(fileName):  # faster than fileinput
     if fileName == "-":
         return sys.stdin
@@ -182,9 +187,9 @@ def tandemRepeatsFromLines(opts, lines, geneParts):
         yield chrom, beg, end, unit, geneInfo, []
 
 def alignmentsFromMaf(opts, lines):
-    alignment = []
     for line in lines:
         if line[0] == "a":
+            alignment = []
             mismap = 0.0
             for i in line.split():
                 if i.startswith("mismap="):
@@ -199,12 +204,8 @@ def alignmentsFromMaf(opts, lines):
             end = beg + len(alignedSeq) - alignedSeq.count("-")
             seqData = seqName, seqLen, strand, beg, end, alignedSeq
             alignment.append(seqData)
-        elif line.isspace():
-            if alignment:
+            if len(alignment) == 2:
                 yield alignment
-                alignment = []
-    if alignment:
-        yield alignment
 
 def refSeqName(alignment):
     return alignment[0][0]
@@ -271,7 +272,7 @@ def gapsFromColinearAlignments(alignments):
             delSize += refSeqBeg(b) - refSeqEnd(a)
             insSize += qrySeqBeg(b) - qrySeqEnd(a)
             isInterAlignment = True
-        alignmentColumns = itertools.izip(b[0][5], b[1][5])
+        alignmentColumns = zip(b[0][5], b[1][5])
         # use "read-ahead" technique, aiming to be as fast as possible:
         for x, y in alignmentColumns: break
         while True:
