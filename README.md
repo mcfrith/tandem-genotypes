@@ -70,6 +70,13 @@ You can supply genes in these formats: refGene.txt, refFlat.txt,
 - `-m PROB`, `--mismap=PROB`: ignore any alignment with mismap
   probability > `PROB` (default=1e-6).
 
+- `--postmask=NUMBER`: by default, `tandem-genotypes` ignores
+  mostly-lowercase alignments (using the method of
+  [`last-postmask`](http://last.cbrc.jp/doc/last-postmask.html)).
+  This is because lowercase indicates repetitive sequence, and
+  alignments without a significant amount of non-repetitive sequence
+  are less reliable.  You can turn this off with `--postmask=0`.
+
 - `-p BP`, `--promoter=BP`: promoter length (default=300).  This is
   used for gene annotation.
 
@@ -79,6 +86,11 @@ You can supply genes in these formats: refGene.txt, refFlat.txt,
 - `-u BP`, `--min-unit=BP`: ignore repeats with unit shorter than `BP`
   (default=2).
 
-- `--mode=LETTER`: L=lenient, S=strict (default=L).
+- `--mode=LETTER`: L=lenient, S=strict (default=L).  The non-default S
+  mode has stricter requirements for using an alignment to a tandem
+  repeat (such as requiring the alignment to actually cover the repeat
+  at least a little bit).  This might be good for high-quality
+  sequence data of the future, but is not recommended as of early
+  2018.
 
 - `-v`, `--verbose`: show more details.

@@ -10,6 +10,7 @@ Options:
   -m PROB, --mismap=PROB
                         ignore any alignment with mismap probability > PROB
                         (default=1e-06)
+  --postmask=NUMBER     ignore mostly-lowercase alignments (default=1)
   -p BP, --promoter=BP  promoter length (default=300)
   -s N, --select=N      select: all repeats (0), non-intergenic repeats (1),
                         non-intergenic non-intronic repeats (2) (default=0)
@@ -86,15 +87,15 @@ chr22	41982508	41982533	AAAACAA	SEPT3	intron	-1,0,0,0,0,0,0,0,0,0,0,0	-2,0,0,0,0
 chr22	41991062	41991093	CAAA	SEPT3	intron	-1,-1,-1,0,0,0,0,0,0,0,0,0,0,1,1	-1,-1,-1,0,0,0,0,0,0
 chr22	41994883	41994923	TG	SEPT3	3'UTR	-7,-7,-4,-3,-1,0,0,0,1,2,3	-16,-14,-13,-13,-13,-12,-12,-11,-9,-8,-7
 
-TEST tandem-genotypes near-beg.bed near-beg.maf
-# tandem-genotypes near-beg.bed near-beg.maf
+TEST tandem-genotypes --postmask=0 near-beg.bed near-beg.maf
+# tandem-genotypes --postmask=0 near-beg.bed near-beg.maf
 ref	21	146	GGGGCC	.	.	21	.
 
-TEST tandem-genotypes small-rep.bed small-rep.maf
-# tandem-genotypes small-rep.bed small-rep.maf
+TEST tandem-genotypes --postmask=0 small-rep.bed small-rep.maf
+# tandem-genotypes --postmask=0 small-rep.bed small-rep.maf
 
-TEST tandem-genotypes far.bed far.maf
-# tandem-genotypes far.bed far.maf
+TEST tandem-genotypes --postmask=0 far.bed far.maf
+# tandem-genotypes --postmask=0 far.bed far.maf
 chr3	63912686	63912715	CAG	.	.	64	.
 
 TEST tandem-genotypes -u1 -s1 -g refFlat.txt simpleRepeat.txt nano.maf
@@ -115,8 +116,8 @@ TEST tandem-genotypes -u3 -s2 -g refFlat.txt simpleRepeat.txt nano.maf
 # tandem-genotypes -u3 -s2 -g refFlat.txt simpleRepeat.txt nano.maf
 chr22	41926181	41926216	CCAGGACCAGCG	TNFRSF13C	coding	-1,0,0,0,0,0,0	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
-TEST tandem-genotypes slop3.bed slop3.maf
-# tandem-genotypes slop3.bed slop3.maf
+TEST tandem-genotypes --postmask=0 slop3.bed slop3.maf
+# tandem-genotypes --postmask=0 slop3.bed slop3.maf
 chr9	27573529	27573546	GGGGCC	.	.	.	16
 
 TEST tandem-genotypes -s2 -p900 -g refFlat.txt simpleRepeat.txt nano.maf
@@ -126,11 +127,11 @@ chr22	41926181	41926216	CCAGGACCAGCG	TNFRSF13C	coding	-1,0,0,0,0,0,0	0,0,0,0,0,0
 chr22	41958483	41958508	GA	LINC00634	exon	-10,-9,-8,-8,-8,-8,-8,-4	-4,-4,-3,-3,-3,-2,-2,-2,-2,-2,-1,-1,-1,-1,0,1
 chr22	41994883	41994923	TG	SEPT3	3'UTR	-7,-7,-4,-3,-1,0,0,0,1,2,3	-16,-14,-13,-13,-13,-12,-12,-11,-9,-8,-7
 
-TEST tandem-genotypes ../hg38-disease-tr.txt far.maf
-# tandem-genotypes ../hg38-disease-tr.txt far.maf
+TEST tandem-genotypes --postmask=0 ../hg38-disease-tr.txt far.maf
+# tandem-genotypes --postmask=0 ../hg38-disease-tr.txt far.maf
 chr3	63912685	63912715	GCA	ATXN7:SCA7:24	coding	64	.
 
-TEST sed 's/chr//' far.maf | tandem-genotypes far.bed
-# tandem-genotypes far.bed
+TEST sed 's/chr//' far.maf | tandem-genotypes --postmask=0 far.bed
+# tandem-genotypes --postmask=0 far.bed
 chr3	63912686	63912715	CAG	.	.	64	.
 

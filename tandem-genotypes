@@ -186,9 +186,83 @@ def tandemRepeatsFromLines(opts, lines, geneParts):
             continue
         yield chrom, beg, end, unit, geneInfo, []
 
+# Start of functions copied from last-postmask
+def complement(base):
+    x = "ACGTRYKMBDHV"
+    y = "TGCAYRMKVHDB"
+    i = x.find(base)
+    return y[i] if i >= 0 else base
+
+def fastScoreMatrix(rowHeads, colHeads, matrix, deleteCost, insertCost):
+    matrixLen = 128
+    defaultScore = min(map(min, matrix))
+    fastMatrix = [[defaultScore for i in range(matrixLen)]
+                  for j in range(matrixLen)]
+    for i, x in enumerate(rowHeads):
+        for j, y in enumerate(colHeads):
+            xu = ord(x.upper())
+            xl = ord(x.lower())
+            yu = ord(y.upper())
+            yl = ord(y.lower())
+            score = matrix[i][j]
+            maskScore = min(score, 0)
+            fastMatrix[xu][yu] = score
+            fastMatrix[xu][yl] = maskScore
+            fastMatrix[xl][yu] = maskScore
+            fastMatrix[xl][yl] = maskScore
+    for i in range(matrixLen):
+        fastMatrix[i][ord("-")] = -deleteCost
+        fastMatrix[ord("-")][i] = -insertCost
+    return fastMatrix
+
+def matrixPerStrand(rowHeads, colHeads, matrix, deleteCost, insertCost):
+    rowComps = [complement(i) for i in rowHeads]
+    colComps = [complement(i) for i in colHeads]
+    fwd = fastScoreMatrix(rowHeads, colHeads, matrix, deleteCost, insertCost)
+    rev = fastScoreMatrix(rowComps, colComps, matrix, deleteCost, insertCost)
+    return fwd, rev
+
+def isGoodAlignment(columns, scoreMatrix, delOpenCost, insOpenCost, minScore):
+    """Does the alignment have a segment with score >= minScore?"""
+    score = 0
+    xOld = yOld = " "
+    for x, y in columns:
+        score += scoreMatrix[ord(x)][ord(y)]
+        if score >= minScore:
+            return True
+        if x == "-" and xOld != "-":
+            score -= insOpenCost
+        if y == "-" and yOld != "-":
+            score -= delOpenCost
+        if score < 0:
+            score = 0
+        xOld = x
+        yOld = y
+    return False
+# End of functions copied from last-postmask
+
 def alignmentsFromMaf(opts, lines):
+    aDel = bDel = aIns = bIns = minScore = matrices = None
+    strandParam = 0
+    scoreMatrix = []
+    rowHeads = []
+    colHeads = []
     for line in lines:
-        if line[0] == "a":
+        if line[0] == "#":
+            fields = line.split()
+            for i in fields:
+                if i.startswith("a="): aDel = int(i[2:])
+                if i.startswith("b="): bDel = int(i[2:])
+                if i.startswith("A="): aIns = int(i[2:])
+                if i.startswith("B="): bIns = int(i[2:])
+                if i.startswith("e="): minScore = int(i[2:])
+                if i.startswith("S="): strandParam = int(i[2:])
+            if not colHeads and len(fields) > 1 and max(map(len, fields)) == 1:
+                colHeads = fields[1:]
+            elif len(fields) > 2 and len(fields[1]) == 1:
+                rowHeads.append(fields[1])
+                scoreMatrix.append([int(i) for i in fields[2:]])
+        elif line[0] == "a":
             alignment = []
             mismap = 0.0
             for i in line.split():
@@ -205,6 +279,18 @@ def alignmentsFromMaf(opts, lines):
             seqData = seqName, seqLen, strand, beg, end, alignedSeq
             alignment.append(seqData)
             if len(alignment) == 2:
+                if opts.postmask:
+                    if not matrices:
+                        if None in (aDel, bDel, aIns, bIns, minScore):
+                            raise Exception("can't read alignment header, "
+                                            "needed for postmasking")
+                        matrices = matrixPerStrand(rowHeads, colHeads,
+                                                   scoreMatrix, bDel, bIns)
+                    columns = zip(alignment[0][5], alignment[1][5])
+                    strand = alignment[strandParam][2]
+                    mat = matrices[strand == "-"]
+                    if not isGoodAlignment(columns, mat, aDel, bDel, minScore):
+                        continue
                 yield alignment
 
 def refSeqName(alignment):
@@ -473,6 +559,8 @@ if __name__ == "__main__":
     op.add_option("-m", "--mismap", type="float", default=1e-6, metavar="PROB",
                   help="ignore any alignment with mismap probability > PROB "
                   "(default=%default)")
+    op.add_option("--postmask", type="int", metavar="NUMBER", default=1, help=
+                  "ignore mostly-lowercase alignments (default=%default)")
     op.add_option("-p", "--promoter", type="int", metavar="BP", default=300,
                   help="promoter length (default=%default)")
     op.add_option("-s", "--select", type="int", metavar="N", default=0, help=
