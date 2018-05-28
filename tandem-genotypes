@@ -257,9 +257,10 @@ def alignmentsFromMaf(opts, lines):
                 if i.startswith("B="): bIns = int(i[2:])
                 if i.startswith("e="): minScore = int(i[2:])
                 if i.startswith("S="): strandParam = int(i[2:])
-            if not colHeads and len(fields) > 1 and max(map(len, fields)) == 1:
+            nf = len(fields)
+            if not colHeads and nf > 1 and max(map(len, fields)) == 1:
                 colHeads = fields[1:]
-            elif len(fields) > 2 and len(fields[1]) == 1:
+            if colHeads and nf == len(colHeads) + 2 and len(fields[1]) == 1:
                 rowHeads.append(fields[1])
                 scoreMatrix.append([int(i) for i in fields[2:]])
         elif line[0] == "a":
