@@ -574,7 +574,7 @@ if __name__ == "__main__":
     op.add_option("-f", "--far", type="int", default=100, metavar="BP", help=
                   "require alignment >= BP beyond both sides of a repeat "
                   "(default=%default)")
-    op.add_option("-n", "--near", type="int", default=20, metavar="BP", help=
+    op.add_option("-n", "--near", type="int", default=60, metavar="BP", help=
                   "count insertions <= BP beyond a repeat (default=%default)")
     op.add_option("--mode", default="L", metavar="LETTER",
                   help="L=lenient, S=strict (default=%default)")

@@ -90,7 +90,7 @@ You can supply genes in these formats: refGene.txt, refFlat.txt,
   this far beyond both sides of the repeat (default=100).
 
 - `-n BP`, `--near=BP`: count insertions <= BP beyond a repeat
-  (default=20).
+  (default=60).
 
 - `--mode=LETTER`: L=lenient, S=strict (default=L).  The non-default S
   mode has stricter requirements for using an alignment to a tandem
