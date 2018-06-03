@@ -401,10 +401,13 @@ def appendCopyNumberChange(opts, tandemRepeat, gaps, strand, queryName):
     """Estimate copy number change from alignment gaps: crude and ad hoc"""
     chrom, repBeg, repEnd, unit, geneInfo, copyNumberChanges = tandemRepeat
     repLen = repEnd - repBeg
-    minAlignedFlank = (repLen + 1) // 2
+    period = len(unit)
+    minAlignedFlank = max(opts.far, period)
     maxAlnBeg = repBeg - minAlignedFlank
     minAlnEnd = repEnd + minAlignedFlank
-    period = len(unit)
+    maxDistance = max(opts.near, period)
+    minGapEnd = repBeg - maxDistance
+    maxGapBeg = repEnd + maxDistance
     diff = 0
     for gapBeg, gapEnd, gapLen, isInterAlignment in gaps:
         if gapEnd <= maxAlnBeg or gapBeg >= minAlnEnd:
@@ -415,15 +418,15 @@ def appendCopyNumberChange(opts, tandemRepeat, gaps, strand, queryName):
                 # ignore deletions adjacent to the repeat
                 # also, ignore negligible insertions near the repeat
                 continue
+        if gapBeg <= maxAlnBeg or gapEnd >= minAlnEnd:
+            return  # a gap goes too far beyond the repeat: give up
         if opts.mode == "S":
             if isInterAlignment and gapLen > 0:
                 return  # suspicious, unexpected insertion: give up
-            if gapEnd < repBeg or gapBeg > repEnd:
-                continue
             if gapBeg <= repBeg and gapEnd >= repEnd:
                 return  # no alignment to the repeat: give up
-        if gapBeg <= maxAlnBeg or gapEnd >= minAlnEnd:
-            return  # a gap goes too far beyond the repeat: give up
+        if gapEnd < minGapEnd or gapBeg > maxGapBeg:
+            continue
         overlap = min(gapEnd, repEnd) - max(gapBeg, repBeg)
         overlap = max(overlap, 0)
         myLen = max(gapLen, -overlap)  # don't count deletion beyond the repeat
@@ -454,7 +457,8 @@ def doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums):
     repBeg = rep[1]
     repEnd = rep[2]
     repLen = repEnd - repBeg
-    minAlignedFlank = (repLen + 1) // 2  # xxx ???
+    period = len(rep[3])
+    minAlignedFlank = max(opts.far, period)
     refLen = refSeqLen(joinedAlnA[0])
     maxAlnBeg = max(repBeg - minAlignedFlank, 0)
     minAlnEnd = min(repEnd + minAlignedFlank, refLen)
@@ -467,16 +471,13 @@ def doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums):
             gaps[n] = list(gaps[n])
         appendCopyNumberChange(opts, rep, gaps[n], strand, queryName)
     else:
-        tooFar = repLen * 3  # xxx ???
-        badBeg = max(alnBegA, repBeg - tooFar)
-        badEnd = min(alnEndZ, repEnd + tooFar)
         for i in myJoinedAlns[1:]:
             b = refSeqBeg(i[0])
-            if b <= badBeg or alnBegA > max(b - minAlignedFlank, 0):
+            if b <= maxAlnBeg or alnBegA > max(b - minAlignedFlank, 0):
                 return
         for i in myJoinedAlns[:-1]:
             e = refSeqEnd(i[-1])
-            if e >= badEnd or alnEndZ < min(e + minAlignedFlank, refLen):
+            if e >= minAlnEnd or alnEndZ < min(e + minAlignedFlank, refLen):
                 return
         tailAlnA = joinedAlnA[-1]
         headAlnZ = joinedAlnZ[0]
@@ -570,6 +571,11 @@ if __name__ == "__main__":
     op.add_option("-u", "--min-unit", type="int", default=2, metavar="BP",
                   help="ignore repeats with unit shorter than BP "
                   "(default=%default)")
+    op.add_option("-f", "--far", type="int", default=100, metavar="BP", help=
+                  "require alignment >= BP beyond both sides of a repeat "
+                  "(default=%default)")
+    op.add_option("-n", "--near", type="int", default=20, metavar="BP", help=
+                  "count insertions <= BP beyond a repeat (default=%default)")
     op.add_option("--mode", default="L", metavar="LETTER",
                   help="L=lenient, S=strict (default=%default)")
     op.add_option("-v", "--verbose", action="count", help="show more details")

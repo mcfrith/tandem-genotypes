@@ -86,6 +86,12 @@ You can supply genes in these formats: refGene.txt, refFlat.txt,
 - `-u BP`, `--min-unit=BP`: ignore repeats with unit shorter than `BP`
   (default=2).
 
+- `-f BP`, `--far=BP`: use DNA reads whose alignments extend at least
+  this far beyond both sides of the repeat (default=100).
+
+- `-n BP`, `--near=BP`: count insertions <= BP beyond a repeat
+  (default=20).
+
 - `--mode=LETTER`: L=lenient, S=strict (default=L).  The non-default S
   mode has stricter requirements for using an alignment to a tandem
   repeat (such as requiring the alignment to actually cover the repeat
