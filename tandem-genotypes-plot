@@ -1,0 +1,141 @@
+#! /usr/bin/env python
+# Copyright 2018 Martin C. Frith
+
+from __future__ import print_function
+
+import gzip
+import itertools
+import optparse
+import subprocess
+import sys
+
+def myOpen(fileName):
+    if fileName == "-":
+        return sys.stdin
+    if fileName.endswith(".gz"):
+        return gzip.open(fileName)
+    return open(fileName)
+
+def changesFromText(text):
+    if text != ".":
+        for i in text.split(","):
+            yield int(i.split(":")[0])
+
+def readTandemGenotypes(opts, fileNames):
+    partScores = {"coding": 700, "5'UTR": 500, "3'UTR": 500, "exon": 400,
+                  "promoter": 400, "intron": 200}
+    for fileName in fileNames:
+        for line in myOpen(fileName):
+            fields = line.split()
+            if not fields or line[0] == "#":
+                continue
+            chrom, beg, end, rep, geneName, genePart, fwd, rev = fields
+            beg = int(beg)
+            end = int(end)
+            fwd = sorted(changesFromText(fwd))
+            rev = sorted(changesFromText(rev))
+            score = partScores.get(genePart, 0)
+            both = sorted(fwd + rev)
+            if len(both) > 1:
+                change2 = max(0, both[-2], -both[1])
+                percentChange2 = len(rep) * change2 * 100 // (end - beg)
+                score += percentChange2
+            yield score, chrom, beg, end, rep, geneName, genePart, fwd, rev
+
+def binsFromSortedValues(values):
+    maxBins = 50  # xxx ???
+    minVal = values[0]
+    maxVal = values[-1]
+    for step in itertools.count(1, 2):
+        offset = step // 2
+        binBeg = (minVal + offset) // step
+        binEnd = (maxVal + offset) // step + 1
+        if binEnd - binBeg <= maxBins:
+            beg = binBeg * step - offset
+            end = binEnd * step - offset
+            return beg, end, step
+
+def countsFromBinsAndValues(bins, values):
+    beg, end, step = bins
+    num = (end - beg) // step
+    counts = [0] * num
+    for i in values:
+        b = (i - beg) // step
+        counts[b] += 1
+    return counts
+
+def rlist(x):
+    return "c(" + ",".join(map(str, x)) + ")"
+
+def ticRange(minVal, maxVal, maxTics=7):
+    for i in itertools.count():
+        for j in 1, 2, 5:
+            step = j * 10 ** i
+            minTic = (minVal - 1) // step + 1
+            maxTic = maxVal // step
+            if maxTic - minTic + 1 <= maxTics:
+                return range(minTic * step, maxVal + 1, step)
+
+def stripSuffix(text, s):
+    if text.endswith(s):
+        return text[:text.rfind(".")]
+    return text
+
+def pipe(dest, s):
+    print(s, file=dest.stdin)
+
+def tandemGenotypesPlot(opts, args):
+    outFile = args[-1]
+    if len(args) == 1:
+        outFile = stripSuffix(outFile, ".gz")
+        removeMe = ".txt", ".tsv"
+        outFile = stripSuffix(outFile, removeMe)
+        outFile += ".pdf"
+        inFiles = args
+    else:
+        if not outFile.endswith(".pdf"):
+            outFile += ".pdf"
+        inFiles = args[:-1]
+    results = sorted(readTandemGenotypes(opts, inFiles), reverse=True)
+    r = subprocess.Popen(["R", "--slave", "--vanilla"], stdin=subprocess.PIPE)
+    pipe(r, 'pdf("{0}", pointsize=8)'.format(outFile))
+    pipe(r, 'layout(rbind(1:4, 5:8, 9:12, 13:16))')
+    pipe(r, 'par(cex=1)')
+    pipe(r, 'par(mar=c(1.8, 1.8, 3, 1.8))')
+    pipe(r, 'par(mgp=c(3, 0.7, 0))')
+    pipe(r, 'par(tcl=-0.4)')
+    #pipe(r, 'par(xaxs="i")')
+    for res in results[:16]:
+        score, chrom, repBeg, repEnd, rep, geneName, genePart, fwd, rev = res
+        geneInfo = " ".join(i for i in (geneName, genePart) if i != ".")
+        repInfo = rep if len(rep) < 11 else rep[:8] + "..."
+        heading1 = repInfo + ": " + geneInfo if geneInfo else repInfo
+        heading2 = chrom + ":" + str(repBeg) + "-" + str(repEnd)
+        both = sorted(fwd + rev)
+        bins = binsFromSortedValues(both)
+        fBars = rlist(countsFromBinsAndValues(bins, fwd))
+        rBars = rlist(countsFromBinsAndValues(bins, rev))
+        maxHeight = max(countsFromBinsAndValues(bins, both))
+        beg, end, step = bins
+        xTics = ticRange(beg, end - 1)
+        yTics = ticRange(0, maxHeight)
+        barWidth = 1
+        barSpace = 0.2
+        gapLen = barSpace * barWidth
+        totLen = gapLen + barWidth
+        xTicPos = [(i - beg + 0.5) / step * totLen + gapLen / 2 for i in xTics]
+        matrix = 'rbind({0}, {1})'.format(fBars, rBars)
+        pipe(r, 'barplot({0}, col=c(2,4), axes=FALSE)'.format(matrix))
+        pipe(r, 'axis(1, {0}, {1})'.format(rlist(xTicPos), rlist(xTics)))
+        pipe(r, 'axis(2, {0})'.format(rlist(yTics)))
+        pipe(r, 'mtext("{0}", line=1.5)'.format(heading1))
+        pipe(r, 'mtext("{0}", line=0.5)'.format(heading2))
+
+if __name__ == "__main__":
+    usage = "%prog tandem-genotypes.txt [output.pdf]"
+    description = "Draw graphs of tandem-genotypes output."
+    op = optparse.OptionParser(usage=usage, description=description)
+    opts, args = op.parse_args()
+    if not args:
+        op.error("please give me a file name")
+    tandemGenotypesPlot(opts, args)

@@ -9,7 +9,7 @@ First, align your sequences as described
 [here](https://github.com/mcfrith/last-rna/blob/master/last-long-reads.md).
 Then, do:
 
-    tandem-genotypes -g refGene.txt microsat.txt alignments.maf
+    tandem-genotypes -g refGene.txt microsat.txt alignments.maf > tg.txt
 
 This will check the tandem repeats in `microsat.txt`, and annotate
 them with the genes in `refGene.txt`.  (It's OK to omit `-g
@@ -31,6 +31,18 @@ example -2 means the read has 2 fewer copies than the reference.
 Column 8 has the same thing for reverse strands.  Here, the first line
 is a nice example with 2 clear alleles, and the second line is a nasty
 example without clear alleles.
+
+## Drawing histograms
+
+You can draw histograms of the output like this:
+
+    tandem-genotypes-plot tg.txt
+
+This will make a file `tg.pdf` with histograms of the 16 most
+"interesting" repeats (based on size change and gene part).  The
+x-axis is copy number change.  Each histogram bar has a red part
+indicating the number of forward-strand reads, and a blue part
+indicating the number of reverse-strand reads.
 
 ## Tandem repeat input
 
