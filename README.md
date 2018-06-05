@@ -34,7 +34,8 @@ example without clear alleles.
 
 ## Drawing histograms
 
-You can draw histograms of the output like this:
+You can draw histograms of the output like this (which requires that
+[R](https://www.r-project.org/) is installed on your computer):
 
     tandem-genotypes-plot tg.txt
 

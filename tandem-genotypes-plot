@@ -46,7 +46,8 @@ def binsFromSortedValues(values):
     maxBins = 50  # xxx ???
     minVal = values[0]
     maxVal = values[-1]
-    for step in itertools.count(1, 2):
+    for s in itertools.count():
+        step = s * 2 + 1
         offset = step // 2
         binBeg = (minVal + offset) // step
         binEnd = (maxVal + offset) // step + 1
@@ -97,7 +98,8 @@ def tandemGenotypesPlot(opts, args):
             outFile += ".pdf"
         inFiles = args[:-1]
     results = sorted(readTandemGenotypes(opts, inFiles), reverse=True)
-    r = subprocess.Popen(["R", "--slave", "--vanilla"], stdin=subprocess.PIPE)
+    r = subprocess.Popen(["R", "--slave", "--vanilla"], stdin=subprocess.PIPE,
+                         universal_newlines=True)
     pipe(r, 'pdf("{0}", pointsize=8)'.format(outFile))
     pipe(r, 'layout(rbind(1:4, 5:8, 9:12, 13:16))')
     pipe(r, 'par(cex=1)')
