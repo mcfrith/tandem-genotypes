@@ -11,9 +11,9 @@ Then, do:
 
     tandem-genotypes -g refGene.txt microsat.txt alignments.maf > tg.txt
 
-This will check the tandem repeats in `microsat.txt`, and annotate
-them with the genes in `refGene.txt`.  (It's OK to omit `-g
-refGene.txt`.)
+This will check the tandem repeats in `microsat.txt`, annotate them
+with the genes in `refGene.txt`, and create an output file `tg.txt`.
+(It's OK to omit `-g refGene.txt`.)
 
 ## Output
 
@@ -43,7 +43,19 @@ This will make a file `tg.pdf` with histograms of the 16 most
 "interesting" repeats (based on size change and gene part).  The
 x-axis is copy number change.  Each histogram bar has a red part
 indicating the number of forward-strand reads, and a blue part
-indicating the number of reverse-strand reads.
+indicating the number of reverse-strand reads.  Instead of 16, you can
+get (e.g.) the top 50:
+
+    tandem-genotypes-plot -n50 tg.txt
+
+You can see all options like this:
+
+    tandem-genotypes-plot --help
+
+You can choose subsets of repeats with standard command-line tools
+like `grep`:
+
+    grep "coding" tg.txt | tandem-genotypes-plot - coding.pdf
 
 ## Tandem repeat input
 
@@ -52,7 +64,7 @@ can be obtained at the [UCSC genome
 database](http://genome.ucsc.edu/)): microsat.txt, simpleRepeat.txt,
 rmsk.txt, RepeatMasker .out.
 
-You can also supply repeats by the first 4 (or 5, or 6) columns of the
+You can also supply repeats by the first 4 (or more) columns of the
 output format:
 
     chr22  41914573  41914611  GCGCGA

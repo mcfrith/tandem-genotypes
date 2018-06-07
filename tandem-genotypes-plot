@@ -100,14 +100,14 @@ def tandemGenotypesPlot(opts, args):
     results = sorted(readTandemGenotypes(opts, inFiles), reverse=True)
     r = subprocess.Popen(["R", "--slave", "--vanilla"], stdin=subprocess.PIPE,
                          universal_newlines=True)
-    pipe(r, 'pdf("{0}", pointsize=8)'.format(outFile))
+    pipe(r, 'pdf("{0}", pointsize={1})'.format(outFile, opts.pointsize))
     pipe(r, 'layout(rbind(1:4, 5:8, 9:12, 13:16))')
     pipe(r, 'par(cex=1)')
     pipe(r, 'par(mar=c(1.8, 1.8, 3, 1.8))')
     pipe(r, 'par(mgp=c(3, 0.7, 0))')
     pipe(r, 'par(tcl=-0.4)')
     #pipe(r, 'par(xaxs="i")')
-    for res in results[:16]:
+    for res in results[:opts.num]:
         score, chrom, repBeg, repEnd, rep, geneName, genePart, fwd, rev = res
         geneInfo = " ".join(i for i in (geneName, genePart) if i != ".")
         repInfo = rep if len(rep) < 11 else rep[:8] + "..."
@@ -137,6 +137,10 @@ if __name__ == "__main__":
     usage = "%prog tandem-genotypes.txt [output.pdf]"
     description = "Draw graphs of tandem-genotypes output."
     op = optparse.OptionParser(usage=usage, description=description)
+    op.add_option("-n", "--num", type="int", default=16,
+                  help="graph the top NUM repeat regions (default=%default)")
+    op.add_option("--pointsize", type="int", default=8, metavar="POINTS",
+                  help="text size (default=%default)")
     opts, args = op.parse_args()
     if not args:
         op.error("please give me a file name")
