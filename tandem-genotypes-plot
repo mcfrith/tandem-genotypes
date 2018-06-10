@@ -151,19 +151,21 @@ def tandemGenotypesPlot(opts, args):
         heading2 = chrom + ":" + str(repBeg) + "-" + str(repEnd)
         both = sorted(fwd + rev)
         bins = binsFromSortedValues(both)
-        fBars = rlist(countsFromBinsAndValues(bins, fwd))
-        rBars = rlist(countsFromBinsAndValues(bins, rev))
+        fBars = countsFromBinsAndValues(bins, fwd)
+        rBars = countsFromBinsAndValues(bins, rev)
         maxHeight = max(countsFromBinsAndValues(bins, both))
         beg, end, step = bins
         xTics = ticRange(beg, end - 1)
         yTics = ticRange(0, maxHeight)
-        barWidth = 1
-        barSpace = 0.2
-        gapLen = barSpace * barWidth
-        totLen = gapLen + barWidth
-        xTicPos = [(i - beg + 0.5) / step * totLen + gapLen / 2 for i in xTics]
-        matrix = 'rbind({0}, {1})'.format(fBars, rBars)
-        pipe(opts, r, 'barplot({0}, col=c(2,4), axes=FALSE)'.format(matrix))
+        barWidthPerSpace = 5
+        barStepPerHalfSpace = (barWidthPerSpace + 1) * 2
+        barWidth = step * 2 * barWidthPerSpace
+        begTicPos = (barWidthPerSpace + 1) + step
+        xTicPos = [(i - beg) * barStepPerHalfSpace + begTicPos for i in xTics]
+        pipe(opts, r, 'f <- ' + rlist(fBars))
+        pipe(opts, r, 'r <- ' + rlist(rBars))
+        t = 'barplot(rbind(f, r), {0}, col=c(2, 4), axes=FALSE)'
+        pipe(opts, r, t.format(barWidth))
         pipe(opts, r, 'axis(1, {0}, {1})'.format(rlist(xTicPos), rlist(xTics)))
         pipe(opts, r, 'axis(2, {0})'.format(rlist(yTics)))
         pipe(opts, r, 'mtext("{0}", line=1.5)'.format(heading1))
