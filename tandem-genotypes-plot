@@ -22,6 +22,7 @@ def changesFromText(text):
             yield int(i.split(":")[0])
 
 def readTandemGenotypes(opts, fileNames):
+    repeatLengthBoost = 30  # xxx ???
     partScores = {"coding": 100, "5'UTR": 20, "3'UTR": 20, "exon": 15,
                   "promoter": 15, "intron": 5}
     for fileName in fileNames:
@@ -32,13 +33,15 @@ def readTandemGenotypes(opts, fileNames):
             chrom, beg, end, rep, geneName, genePart, fwd, rev = fields
             beg = int(beg)
             end = int(end)
+            repLen = end - beg
+            unitLen = len(rep)
             fwd = sorted(changesFromText(fwd))
             rev = sorted(changesFromText(rev))
-            score = 0
             both = sorted(fwd + rev)
+            change2 = 0
             if len(both) > 1:
                 change2 = max(0, both[-2], -both[1])
-                score = len(rep) * change2 * 100 // (end - beg)
+            score = unitLen * change2 * 100 // (repLen + repeatLengthBoost)
             score *= partScores.get(genePart, 1)
             yield score, chrom, beg, end, rep, geneName, genePart, fwd, rev
 
