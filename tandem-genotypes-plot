@@ -172,7 +172,7 @@ def tandemGenotypesPlot(opts, args):
         xTicPos = [(i - beg) * barStepPerHalfSpace + begTicPos for i in xTics]
         pipe(opts, r, 'f <- ' + rlist(fBars))
         pipe(opts, r, 'r <- ' + rlist(rBars))
-        t = 'barplot(rbind(f, r), {0}, col=c(2, 4), axes=FALSE)'
+        t = 'barplot(rbind(f, r), {0}, col=c(2, 4), border=NA, axes=FALSE)'
         pipe(opts, r, t.format(barWidth))
         pipe(opts, r, 'axis(1, {0}, {1})'.format(rlist(xTicPos), rlist(xTics)))
         pipe(opts, r, 'axis(2, {0})'.format(rlist(yTics)))
@@ -190,7 +190,7 @@ if __name__ == "__main__":
                   "arrange the graphs in this many columns (default=%default)")
     op.add_option("-n", "--num", type="int",
                   help="graph the top NUM repeat regions (default=ROWS*COLS)")
-    op.add_option("--pointsize", type="int", default=8, metavar="POINTS",
+    op.add_option("--pointsize", default="8", metavar="POINTS",
                   help="text size (default=%default)")
     op.add_option("-v", "--verbose", action="count", default=0,
                   help="show more details")
