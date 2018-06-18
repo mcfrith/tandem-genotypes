@@ -125,3 +125,9 @@ You can supply genes in these formats: refGene.txt, refFlat.txt,
   2018.
 
 - `-v`, `--verbose`: show more details.
+
+## Limitations
+
+* `tandem-genotypes` doesn't work for tandem repeats at (or extremely
+  near) the edge of a sequence.  This is because it uses DNA reads
+  that clearly align beyond both sides of the repeat.

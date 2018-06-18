@@ -544,12 +544,11 @@ def tandemGenotypes(opts, args):
     print("#", prog, " ".join(sys.argv[1:]))
 
     for chrom, beg, end, unit, geneInfo, copyNumberChanges in tandemRepeats:
-        if copyNumberChanges and any(i[1] for i in copyNumberChanges):
+        if any(i[1] for i in copyNumberChanges) or opts.verbose > 1:
             fwd = (i for i in copyNumberChanges if i[0] != "-")
             rev = (i for i in copyNumberChanges if i[0] == "-")
-            changes = changeText(opts, fwd) + "\t" + changeText(opts, rev)
-            out = chrom, str(beg), str(end), unit, "\t".join(geneInfo), changes
-            print("\t".join(out))
+            print(chrom, beg, end, unit, geneInfo[0], geneInfo[1],
+                  changeText(opts, fwd), changeText(opts, rev), sep="\t")
 
 if __name__ == "__main__":
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # avoid silly error message
@@ -578,7 +577,8 @@ if __name__ == "__main__":
                   "count insertions <= BP beyond a repeat (default=%default)")
     op.add_option("--mode", default="L", metavar="LETTER",
                   help="L=lenient, S=strict (default=%default)")
-    op.add_option("-v", "--verbose", action="count", help="show more details")
+    op.add_option("-v", "--verbose", action="count", default=0,
+                  help="show more details")
     opts, args = op.parse_args()
     if not args:
         op.error("please give me repeats and MAF alignments")
