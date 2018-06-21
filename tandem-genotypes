@@ -516,9 +516,6 @@ def doOneMafFile(opts, tandemRepeats, maxRepeatLength, lines):
     for k, v in itertools.groupby(alignments, qrySeqName):
         doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, v)
 
-def complement(x):
-    return "TGCA"["ACGT".index(x)]
-
 def reverseComplement(seq):
     return "".join(map(complement, reversed(seq)))
 
