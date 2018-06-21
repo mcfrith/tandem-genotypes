@@ -113,6 +113,8 @@ def tandemGenotypesPlot(opts, args):
         fwd = sorted(changesFromText(fwd))
         rev = sorted(changesFromText(rev))
         both = sorted(fwd + rev)
+        if not both:
+            both = [0]
         bins = binsFromSortedValues(both)
         fBars = countsFromBinsAndValues(bins, fwd)
         rBars = countsFromBinsAndValues(bins, rev)
@@ -127,8 +129,8 @@ def tandemGenotypesPlot(opts, args):
         xTicPos = [(i - beg) * barStepPerHalfSpace + begTicPos for i in xTics]
         pipe(opts, r, 'f <- ' + rlist(fBars))
         pipe(opts, r, 'r <- ' + rlist(rBars))
-        t = 'barplot(rbind(f, r), {0}, col=c(2, 4), border=NA, axes=FALSE)'
-        pipe(opts, r, t.format(barWidth))
+        pipe(opts, r, 'barplot(rbind(f,r), {0}, col=c(2,4), border=NA, '
+             'ylim=c(0,{1}), axes=FALSE)'.format(barWidth, maxHeight))
         pipe(opts, r, 'axis(1, {0}, {1})'.format(rlist(xTicPos), rlist(xTics)))
         pipe(opts, r, 'axis(2, {0})'.format(rlist(yTics)))
         pipe(opts, r, 'mtext("{0}", line=1.5)'.format(heading1))
