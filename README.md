@@ -78,10 +78,9 @@ repeats with the included files `hg19-disease-tr.txt` and
 
     tandem-genotypes hg38-disease-tr.txt alignments.maf
 
-These files have "gene names" like: `ATXN7:SCA7:24`.  The 1st part is
-the actual gene name, the 2nd part is the disease
-(e.g. spinocerebellar ataxia 7), and the 3rd part is the cutoff
-copy-number increase for disease risk (which is not always clear).
+These files have "gene names" like: `ATXN7:SCA7`.  The 1st part is the
+actual gene name, and the 2nd part is the disease
+(e.g. spinocerebellar ataxia 7).
 
 ## Gene input
 

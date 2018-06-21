@@ -133,7 +133,7 @@ chr22	41926181	41926216	CCAGGACCAGCG	TNFRSF13C	coding	-1,0,0,0,0,0,0	0,0,0,0,0,0
 
 TEST tandem-genotypes --postmask=0 ../hg38-disease-tr.txt far.maf
 # tandem-genotypes --postmask=0 ../hg38-disease-tr.txt far.maf
-chr3	63912685	63912715	GCA	ATXN7:SCA7:24	coding	64	.
+chr3	63912685	63912715	GCA	ATXN7:SCA7	coding	64	.
 
 TEST sed 's/chr//' far.maf | tandem-genotypes --postmask=0 far.bed
 # tandem-genotypes --postmask=0 far.bed
