@@ -32,6 +32,9 @@ Column 8 has the same thing for reverse strands.  Here, the first line
 is a nice example with 2 clear alleles, and the second line is a nasty
 example without clear alleles.
 
+The output lines are in descending order of "importance", based on
+size change and gene part.
+
 ## Drawing histograms
 
 You can draw histograms of the output like this (which requires that
@@ -39,9 +42,8 @@ You can draw histograms of the output like this (which requires that
 
     tandem-genotypes-plot tg.txt
 
-This will make a file `tg.pdf` with histograms of the 16 most
-"interesting" repeats (based on size change and gene part).  The
-x-axis is copy number change.  Each histogram bar has a red part
+This will make a file `tg.pdf` with histograms of the top 16 repeats.
+The x-axis is copy number change.  Each histogram bar has a red part
 indicating the number of forward-strand reads, and a blue part
 indicating the number of reverse-strand reads.  Instead of 16, you can
 get (e.g.) the top 50:
@@ -124,7 +126,9 @@ You can supply genes in these formats: refGene.txt, refFlat.txt,
   sequence data of the future, but is not recommended as of early
   2018.
 
-- `-v`, `--verbose`: show more details.
+- `-v`, `--verbose`: show more details.  `-v` shows the name of the
+  DNA read with each copy number change.  `-vv` shows output for all
+  repeats, including ones without any change.
 
 ## Limitations
 
