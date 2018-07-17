@@ -547,12 +547,12 @@ def priorityScore(tandemRepeat):
     if len(copyNumberChanges) > 1:
         c = sorted(i[1] for i in copyNumberChanges)
         change2 = max(0, c[-2], -c[1])
-    percent = len(unit) * change2 * 100 // (end - beg + repeatLengthBoost)
+    frac = len(unit) * change2 * 1.0 / (end - beg + repeatLengthBoost)
     genePart = geneInfo[1]
     geneScore = partScores.get(genePart, 1)
     if genePart == "coding" and isBadCodons(unit):
         geneScore *= 2
-    return geneScore * percent if copyNumberChanges else -1
+    return geneScore * frac if copyNumberChanges else -1.0
 
 def oneChangeText(opts, change):
     text = str(change[1])
