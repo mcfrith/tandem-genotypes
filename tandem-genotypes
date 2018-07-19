@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import bisect
 import collections
+import functools
 import gzip
 import itertools
 import optparse
@@ -548,29 +549,27 @@ def isBadCodons(seq):
     badCodonSets = glnCodons, alaCodons
     return any(isRepeatedCodonsInAnyFrame6(seq, i) for i in badCodonSets)
 
-def priorityScore(tandemRepeat):
+def priorityScore(numOfOutliers, tandemRepeat):
     repeatLengthBoost = 30  # xxx ???
     partScores = {"coding": 50, "5'UTR": 20, "3'UTR": 20, "exon": 15,
                   "promoter": 15, "intron": 5}
     chrom, beg, end, unit, geneInfo, copyNumberChanges = tandemRepeat
-    score1 = -1.0
-    score2 = 0.0
-    if copyNumberChanges:
-        genePart = geneInfo[1]
-        geneScore = partScores.get(genePart, 1)
-        if genePart == "coding" and isBadCodons(unit):
-            geneScore *= 2
-        mul = geneScore * len(unit)
-        denom = (end - beg + repeatLengthBoost) * 1.0
-        c = sorted(i[1] for i in copyNumberChanges)
-        score1 = max(c[-1], -c[0]) * mul / denom
+    scores = [len(copyNumberChanges)]
+    genePart = geneInfo[1]
+    geneScore = partScores.get(genePart, 1)
+    if genePart == "coding" and isBadCodons(unit):
+        geneScore *= 2
+    mul = geneScore * len(unit)
+    denom = (end - beg + repeatLengthBoost) * 1.0
+    c = sorted(i[1] for i in copyNumberChanges)
+    for i in range(numOfOutliers + 1):
+        scores.append(max(c[-1], -c[0]) * mul / denom if c else 0.0)
         if c and c[-1] > 0:
             c.pop()  # discard the most extreme expansion
         if c and c[0] < 0:
             c.pop(0)  # discard the most extreme contraction
-        if c:
-            score2 = max(c[-1], -c[0]) * mul / denom
-    return score2, score1
+    scores.reverse()
+    return scores
 
 def oneChangeText(opts, change):
     text = str(change[1])
@@ -596,7 +595,7 @@ def tandemGenotypes(opts, args):
     for i in fileNames:
         doOneMafFile(opts, tandemRepeats, maxRepeatLength, openAndLog(opts, i))
 
-    tandemRepeats.sort(key=priorityScore, reverse=True)
+    tandemRepeats.sort(key=functools.partial(priorityScore, 1), reverse=True)
 
     prog = os.path.basename(sys.argv[0])
     print("#", prog, " ".join(sys.argv[1:]))
