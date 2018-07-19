@@ -315,6 +315,10 @@ def qrySeqBeg(alignment):
 def qrySeqEnd(alignment):
     return alignment[1][4]
 
+def qryFwdBeg(alignment):
+    q = alignment[1]
+    return q[3] if q[2] == "+" else q[1] - q[4]
+
 def isFwdColinear(oldAln, newAln):
     """Is oldAln upstream of newAln in all sequences?"""
     return all(i[4] <= j[3] for i, j in zip(oldAln, newAln))
@@ -324,6 +328,10 @@ def isFwd(colinearAlignments):
 
 def isColinear(colinearAlignments, newAln):
     oldAln = colinearAlignments[-1]
+    if qryFwdBeg(oldAln) > qryFwdBeg(newAln):
+        # We could sort the alignments into the right order.  But
+        # wrong order is unexpected, and may indicate other problems.
+        raise Exception("the alignments are in the wrong order")
     if any(i[:3] != j[:3] for i, j in zip(oldAln, newAln)):
         return False
     if len(colinearAlignments) == 1:
