@@ -320,8 +320,10 @@ def qryFwdBeg(alignment):
     return q[3] if q[2] == "+" else q[1] - q[4]
 
 def isFwdColinear(oldAln, newAln):
-    """Is oldAln upstream of newAln in all sequences?"""
-    return all(i[4] <= j[3] for i, j in zip(oldAln, newAln))
+    """Is oldAln (not too far) upstream of newAln in all sequences?"""
+    maxGap = 1000000  # xxx ???
+    return all(i[4] <= j[3] and j[3] - i[4] <= maxGap
+               for i, j in zip(oldAln, newAln))
 
 def isFwd(colinearAlignments):
     return isFwdColinear(colinearAlignments[0], colinearAlignments[1])
