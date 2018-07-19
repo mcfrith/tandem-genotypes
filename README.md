@@ -1,7 +1,7 @@
 # tandem-genotypes
 
-`tandem-genotypes` tries to indicate the copy numbers of tandem
-repeats, from alignments of DNA reads to a genome.
+`tandem-genotypes` finds changes in length of tandem repeats, from
+"long" DNA reads aligned to a genome.
 
 ## Usage
 
@@ -127,7 +127,7 @@ You can supply genes in these formats: refGene.txt, refFlat.txt,
 
 - `-v`, `--verbose`: show more details.  `-v` shows the name of the
   DNA read with each copy number change.  `-vv` shows output for all
-  repeats, including ones without any change.
+  repeats, including ones not covered by any DNA read.
 
 ## Limitations
 
