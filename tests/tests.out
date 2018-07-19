@@ -75,10 +75,10 @@ chr22	41961159	41961203	TTTA	.	intergenic	-2,-2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0	
 chr22	41922713	41922797	AGATGGGGTGGG	.	intergenic	0,0,0,0,0,0,0,0	-1,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1
 chr22	41959510	41959535	AAACA	.	intergenic	0,0,0,0,0,0,0,1	-1,-1,-1,0,0,0,0,0,0,0,0,0,1,1
 chr22	41915069	41915109	GCTCCG	.	intergenic	-1,0,0,0,0,0,1	-2,-1,0,0,0,0,0,0
-chr22	41916394	41916426	ACACACACATGT	.	intergenic	-1,0,0,0,0,0,0,0,0,0,0	0,0,0,0,0,0,0,0,0
-chr22	41922641	41922755	AGATGGGGTGGCCAGGAGA	.	intergenic	0,0,0,0,0,0,0,0	-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 chr22	41926181	41926216	CCAGGACCAGCG	TNFRSF13C	coding	-1,0,0,0,0,0,0	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+chr22	41916394	41916426	ACACACACATGT	.	intergenic	-1,0,0,0,0,0,0,0,0,0,0	0,0,0,0,0,0,0,0,0
 chr22	41929081	41929146	GGTGTGGGTGAGCGTG	.	intergenic	0,0,0,0,0,0,0,0,0,0,0	-1,0,0,0,0,0,0,0,0,0,0,0,0,0
+chr22	41922641	41922755	AGATGGGGTGGCCAGGAGA	.	intergenic	0,0,0,0,0,0,0,0	-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 TEST tandem-genotypes -s1 -g refFlat.txt simpleRepeat.txt nano.maf
 # tandem-genotypes -s1 -g refFlat.txt simpleRepeat.txt nano.maf
