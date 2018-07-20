@@ -3,6 +3,14 @@
 `tandem-genotypes` finds changes in length of tandem repeats, from
 "long" DNA reads aligned to a genome.
 
+## Requirements & installation
+
+[Python](https://www.python.org/) (>= 2.6 or 3) needs to be installed
+on your computer.  To draw histograms, [R](https://www.r-project.org/)
+needs to be installed on your computer.  You can download
+`tandem-genotypes` to your computer, put the programs in any
+convenient directory, and use them as-is.
+
 ## Usage
 
 First, align your sequences as described
@@ -37,8 +45,7 @@ size change and gene part.
 
 ## Drawing histograms
 
-You can draw histograms of the output like this (which requires that
-[R](https://www.r-project.org/) is installed on your computer):
+You can draw histograms of the output like this:
 
     tandem-genotypes-plot tg.txt
 
