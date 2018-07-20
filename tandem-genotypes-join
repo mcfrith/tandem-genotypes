@@ -1,0 +1,173 @@
+#! /usr/bin/env python
+# Copyright 2018 Martin C. Frith
+
+from __future__ import print_function
+
+import gzip
+import itertools
+import operator
+import optparse
+import os
+import signal
+import sys
+
+def myOpen(fileName):
+    if fileName == "-":
+        return sys.stdin
+    if fileName.endswith(".gz"):
+        return gzip.open(fileName)
+    return open(fileName)
+
+def complement(x):
+    return "TGCA"["ACGT".index(x)]
+
+def reverseComplement(seq):
+    return "".join(map(complement, reversed(seq)))
+
+def isRepeatedCodons(seq, codons):
+    r = range(0, len(seq), 3)
+    return all(seq[i:i+3] in codons for i in r)
+
+def isRepeatedCodonsInAnyFrame3(seq, codons):
+    return any(isRepeatedCodons(seq[i:] + seq[:i], codons) for i in range(3))
+
+def isRepeatedCodonsInAnyFrame6(seq, codons):
+    if isRepeatedCodonsInAnyFrame3(seq, codons):
+        return True
+    codons = [reverseComplement(i) for i in codons]
+    return isRepeatedCodonsInAnyFrame3(seq, codons)
+
+def isBadCodons(seq):
+    glnCodons = "CAA", "CAG"
+    alaCodons = "GCA", "GCC", "GCG", "GCT"
+    badCodonSets = glnCodons, alaCodons
+    return any(isRepeatedCodonsInAnyFrame6(seq, i) for i in badCodonSets)
+
+def allCopyNumberChangeFields(numOfDatasets, group):
+    i = 0
+    for j in range(numOfDatasets):
+        if i < len(group) and group[i][0] == j:
+            yield group[i][7]
+            yield group[i][8]
+            i += 1
+            if i < len(group) and group[i][0] == j:
+                raise Exception("duplicate repeat in dataset " + str(j))
+        else:
+            yield "."
+            yield "."
+
+def coverageFromText(text):
+    return 0 if text == "." else text.count(",") + 1
+
+def numOfOutliersToIgnore(dataset):
+    total = count = 0
+    for i in dataset:
+        coverage = coverageFromText(i[7]) + coverageFromText(i[8])
+        total += coverage
+        count += (coverage > 0)
+    return 1 if total >= 3 * count else 0
+
+def copyNumberChangesFromText(text):
+    if text != ".":
+        for i in text.split(","):
+            if ":" in i:
+                i = i[:i.index(":")]
+            yield int(i)
+
+def representativeCopyNumberChanges(outliers, records):
+    for r in records:
+        c = sorted(itertools.chain(copyNumberChangesFromText(r[7]),
+                                   copyNumberChangesFromText(r[8])))
+        for i in range(outliers[r[0]]):
+            if c and c[-1] > 0:
+                c.pop()
+            if c and c[0] < 0:
+                c.pop(0)
+        if c:
+            yield c[-1] if c[-1] >= -c[0] else c[0]
+
+def average(x):
+    y = list(x)
+    return 1.0 * sum(y) / max(len(y), 1)
+
+def cbrt(x):
+    if x >= 0:
+        return x ** (1.0 / 3)
+    return -((-x) ** (1.0 / 3))
+
+def cubicMean(x):
+    return cbrt(average(i ** 3 for i in x))
+
+def scoredJoinedLines(opts, args):
+    repeatLengthBoost = 30  # xxx ???
+    partScores = {"coding": 50, "5'UTR": 20, "3'UTR": 20, "exon": 15,
+                  "promoter": 15, "intron": 5}
+
+    records = []
+    datasetCount = 0
+    numOfPositiveDatasets = -1
+    for arg in args:
+        if arg == ":":
+            numOfPositiveDatasets = datasetCount
+            continue
+        datasetsPerChunk = 0
+        for line in myOpen(arg):
+            fields = line.split()
+            if line[0] == "#":
+                datasetCount += datasetsPerChunk
+                datasetsPerChunk = 0
+            elif fields:
+                dpc = (len(fields) - 6) // 2
+                if (len(fields) < 6 or len(fields) % 2 or
+                    datasetsPerChunk and datasetsPerChunk != dpc):
+                    raise Exception("bad data in file: " + arg)
+                datasetsPerChunk = dpc
+                for i in range(dpc):
+                    j = 6 + i * 2
+                    r = [datasetCount + i] + fields[:6] + fields[j:j+2]
+                    records.append(r)
+        datasetCount += datasetsPerChunk
+    if numOfPositiveDatasets == -1:
+        numOfPositiveDatasets = datasetCount
+
+    records.sort()
+    outliers = [numOfOutliersToIgnore(v)
+                for k, v in itertools.groupby(records, operator.itemgetter(0))]
+
+    records.sort(key=operator.itemgetter(1, 2, 3, 4))  # stable
+    for k, v in itertools.groupby(records, operator.itemgetter(1, 2, 3, 4)):
+        chrom, beg, end, unit = k
+        group = list(v)
+        geneName, genePart = group[0][5:7]
+        changeFields = list(allCopyNumberChangeFields(datasetCount, group))
+        posRecords = [i for i in group if i[0] < numOfPositiveDatasets]
+        negRecords = [i for i in group if i[0] >= numOfPositiveDatasets]
+        pos = cubicMean(representativeCopyNumberChanges(outliers, posRecords))
+        neg = cubicMean(representativeCopyNumberChanges(outliers, negRecords))
+        if pos < 0:
+            pos = -pos
+            neg = -neg
+        diff = max(pos - max(neg, 0), 0)
+        geneScore = partScores.get(genePart, 1)
+        if genePart == "coding" and isBadCodons(unit):
+            geneScore *= 2
+        mul = geneScore * len(unit)
+        jointScore = mul * diff / (int(end) - int(beg) + repeatLengthBoost)
+        fields = [chrom, beg, end, unit, geneName, genePart] + changeFields
+        yield -jointScore, fields
+
+def tandemGenotypesJoin(opts, args):
+    print("#", os.path.basename(sys.argv[0]), *sys.argv[1:])
+    for jointScore, fields in sorted(scoredJoinedLines(opts, args)):
+        print(*fields, sep="\t")
+
+if __name__ == "__main__":
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # avoid silly error message
+    usage = "%prog positive-file(s) [: negative-file(s)]"
+    description = "Join and re-rank outputs of tandem-genotypes."
+    op = optparse.OptionParser(usage=usage, description=description)
+    opts, args = op.parse_args()
+    if args:
+        tandemGenotypesJoin(opts, args)
+    else:
+        op.print_help()

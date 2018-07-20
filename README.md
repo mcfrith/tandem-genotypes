@@ -59,6 +59,29 @@ like `grep`:
 
     grep "coding" tg.txt | tandem-genotypes-plot - coding.pdf
 
+## Joining and re-ranking `tandem-genotypes` outputs
+
+Suppose you have DNA reads from 1 patient and 2 healthy controls.  You
+can join their `tandem-genotypes` outputs like this:
+
+    tandem-genotypes-join patient.txt : healthy1.txt healthy2.txt > out.txt
+
+Each output line shows: 1 tandem repeat with copy number changes for
+all inputs (in the order that you specified them).
+
+The output lines are in descending order of "importance": large
+changes in the patient are prioritized, and large changes in the
+controls are de-prioritized.
+
+You can run `tandem-genotypes-plot` on this output: it will show the
+first (left-most) dataset.
+
+You can use any number of patients and controls (separated by `:`).
+You can also use concatenated files:
+
+    cat healthy1.txt healthy2.txt > controls.txt
+    tandem-genotypes-join patient.txt : controls.txt > out.txt
+
 ## Tandem repeat input
 
 You can supply tandem repeat locations by any of these files (which
