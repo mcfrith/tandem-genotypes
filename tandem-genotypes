@@ -595,7 +595,12 @@ def tandemGenotypes(opts, args):
     for i in fileNames:
         doOneMafFile(opts, tandemRepeats, maxRepeatLength, openAndLog(opts, i))
 
-    tandemRepeats.sort(key=functools.partial(priorityScore, 1), reverse=True)
+    # Put the repeats in descending order of a priority score
+    # Omit outliers from priority, unless the coverage seems low
+    coverages = [len(i[5]) for i in tandemRepeats if i[5]]
+    numOfOutliers = 1 if sum(coverages) >= 3 * len(coverages) else 0  # ?
+    sortKey = functools.partial(priorityScore, numOfOutliers)
+    tandemRepeats.sort(key=sortKey, reverse=True)
 
     prog = os.path.basename(sys.argv[0])
     print("#", prog, " ".join(sys.argv[1:]))
