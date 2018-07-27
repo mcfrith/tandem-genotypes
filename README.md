@@ -21,7 +21,9 @@ Then, do:
 
 This will check the tandem repeats in `microsat.txt`, annotate them
 with the genes in `refGene.txt`, and create an output file `tg.txt`.
-(It's OK to omit `-g refGene.txt`.)
+
+* It's OK to omit `-g refGene.txt`.
+* It's OK to use gzipped (`.gz`) files.
 
 ## Output
 
@@ -88,6 +90,28 @@ You can also use concatenated files:
 
     cat healthy1.txt healthy2.txt > controls.txt
     tandem-genotypes-join patient.txt : controls.txt > out.txt
+
+## Using a genome instead of reads
+
+You can also find repeat length changes in a genome.  For example, in
+a chimpanzee genome relative to human:
+
+    tandem-genotypes -g refGene.txt microsat.txt hg38-panTro5-1.maf > chimp.txt
+
+These human-chimp alignments are available
+[here](https://github.com/mcfrith/last-genome-alignments).  You could
+use the output as a "healthy control":
+
+    tandem-genotypes-join patient.txt : controls.txt chimp.txt > out.txt
+
+Points to be careful of:
+
+* For `tandem-genotypes-join`, make sure the "reference" genome is the
+  same in all cases.
+
+* `tandem-genotypes` requires that the alignments are in the order
+  produced by `last-split`.  So `hg38-panTro5-2.maf` from the above
+  website won't work.
 
 ## Tandem repeat input
 
@@ -164,3 +188,10 @@ You can supply genes in these formats: refGene.txt, refFlat.txt,
 * `tandem-genotypes` doesn't work for tandem repeats at (or extremely
   near) the edge of a sequence.  This is because it uses DNA reads
   that clearly align beyond both sides of the repeat.
+
+## Paper
+
+For more details, please see: [Robust detection of tandem repeat
+expansions from long DNA
+reads](https://www.biorxiv.org/content/early/2018/07/24/356931) by S
+Mitsuhashi, MC Frith, et al.
