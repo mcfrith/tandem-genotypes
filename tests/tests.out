@@ -161,7 +161,8 @@ Usage: tandem-genotypes-join positive-file(s) [: negative-file(s)]
 Join and re-rank outputs of tandem-genotypes.
 
 Options:
-  -h, --help  show this help message and exit
+  -h, --help     show this help message and exit
+  -v, --verbose  show more details
 
 TEST tandem-genotypes-join min.txt : pro.txt ape.txt
 # tandem-genotypes-join min.txt : pro.txt ape.txt

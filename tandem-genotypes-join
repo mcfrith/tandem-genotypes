@@ -144,28 +144,34 @@ def scoredJoinedLines(opts, args):
         negRecords = [i for i in group if i[0] >= numOfPositiveDatasets]
         pos = cubicMean(representativeCopyNumberChanges(outliers, posRecords))
         neg = cubicMean(representativeCopyNumberChanges(outliers, negRecords))
-        if pos < 0:
-            pos = -pos
-            neg = -neg
-        diff = max(pos - max(neg, 0), 0)
+        if pos >= 0:
+            diff = max(pos - max(neg, 0), 0)
+        else:
+            diff = max(-pos - max(-neg, 0), 0)
         geneScore = partScores.get(genePart, 1)
         if genePart == "coding" and isBadCodons(unit):
             geneScore *= 2
         mul = geneScore * len(unit)
         jointScore = mul * diff / (int(end) - int(beg) + repeatLengthBoost)
         fields = [chrom, beg, end, unit, geneName, genePart] + changeFields
-        yield -jointScore, fields
+        yield -jointScore, fields, (geneScore, pos, neg)
 
 def tandemGenotypesJoin(opts, args):
     print("#", os.path.basename(sys.argv[0]), *sys.argv[1:])
-    for jointScore, fields in sorted(scoredJoinedLines(opts, args)):
-        print(*fields, sep="\t")
+    for jointScore, fields, info in sorted(scoredJoinedLines(opts, args)):
+        if opts.verbose:
+            t = "{0:.3g}\t{1}\t{2:.9g}\t{3:.9g}".format(-jointScore, *info)
+            print(t, *fields, sep="\t")
+        else:
+            print(*fields, sep="\t")
 
 if __name__ == "__main__":
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # avoid silly error message
     usage = "%prog positive-file(s) [: negative-file(s)]"
     description = "Join and re-rank outputs of tandem-genotypes."
     op = optparse.OptionParser(usage=usage, description=description)
+    op.add_option("-v", "--verbose", action="count", default=0,
+                  help="show more details")
     opts, args = op.parse_args()
     if args:
         tandemGenotypesJoin(opts, args)
