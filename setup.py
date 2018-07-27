@@ -4,10 +4,17 @@ import subprocess
 
 here = path.abspath(path.dirname(__file__))
 
-args = "git", "-C", here, "describe", "--dirty"
-p = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
-out, err = p.communicate()
-version = out.strip()
+# Why is this so hard?
+commitInfo = "$Format:%d$".strip("( )").split()
+if "tag:" in commitInfo:
+    version = commitInfo[commitInfo.index("tag:") + 1].rstrip(",")
+else:
+    args = "git", "-C", here, "describe", "--dirty"
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
+    out, err = p.communicate()
+    if p.returncode:
+        raise subprocess.CalledProcessError(p.returncode, args)
+    version = out.strip()
 
 setup(
     name="tandem-genotypes",
