@@ -162,6 +162,7 @@ Join and re-rank outputs of tandem-genotypes.
 
 Options:
   -h, --help     show this help message and exit
+  -s, --shrink   shrink the output
   -v, --verbose  show more details
 
 TEST tandem-genotypes-join min.txt : pro.txt ape.txt

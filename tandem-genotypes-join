@@ -67,24 +67,25 @@ def numOfOutliersToIgnore(dataset):
         count += (coverage > 0)
     return 1 if total >= 3 * count else 0
 
-def copyNumberChangesFromText(text):
+def copyNumberChangesFromText(record, fieldNum):
+    text = record[fieldNum]
     if text != ".":
         for i in text.split(","):
             if ":" in i:
                 i = i[:i.index(":")]
-            yield int(i)
+            yield int(i), fieldNum
 
-def representativeCopyNumberChanges(outliers, records):
-    for r in records:
-        c = sorted(itertools.chain(copyNumberChangesFromText(r[7]),
-                                   copyNumberChangesFromText(r[8])))
-        for i in range(outliers[r[0]]):
-            if c and c[-1] > 0:
-                c.pop()
-            if c and c[0] < 0:
-                c.pop(0)
-        if c:
-            yield c[-1] if c[-1] >= -c[0] else c[0]
+def representativeCopyNumberChange(record, numOfOutliers):
+    c = sorted(itertools.chain(copyNumberChangesFromText(record, 7),
+                               copyNumberChangesFromText(record, 8)))
+    for i in range(numOfOutliers):
+        if c and c[-1][0] > 0:
+            c.pop()  # discard the most extreme expansion
+        if c and c[0][0] < 0:
+            c.pop(0)  # discard the most extreme contraction
+    if c:
+        return c[-1] if c[-1][0] >= -c[0][0] else c[0]
+    return None, None
 
 def average(x):
     y = list(x)
@@ -96,7 +97,7 @@ def cbrt(x):
     return -((-x) ** (1.0 / 3))
 
 def cubicMean(x):
-    return cbrt(average(i ** 3 for i in x))
+    return cbrt(average(i ** 3 for i in x if i is not None))
 
 def scoredJoinedLines(opts, args):
     repeatLengthBoost = 30  # xxx ???
@@ -134,16 +135,26 @@ def scoredJoinedLines(opts, args):
     outliers = [numOfOutliersToIgnore(v)
                 for k, v in itertools.groupby(records, operator.itemgetter(0))]
 
+    for r in records:
+        rep, fieldNum = representativeCopyNumberChange(r, outliers[r[0]])
+        r.append(rep)
+        if opts.shrink:
+            r[7] = r[8] = "."
+            if rep is not None:
+                r[fieldNum] = str(rep)
+
     records.sort(key=operator.itemgetter(1, 2, 3, 4))  # stable
     for k, v in itertools.groupby(records, operator.itemgetter(1, 2, 3, 4)):
         chrom, beg, end, unit = k
         group = list(v)
-        geneName, genePart = group[0][5:7]
+        if opts.shrink and all(i[9] is None for i in group):
+            continue
+        geneName = genePart = "."
+        if opts.shrink < 2:
+            geneName, genePart = group[0][5:7]
         changeFields = list(allCopyNumberChangeFields(datasetCount, group))
-        posRecords = [i for i in group if i[0] < numOfPositiveDatasets]
-        negRecords = [i for i in group if i[0] >= numOfPositiveDatasets]
-        pos = cubicMean(representativeCopyNumberChanges(outliers, posRecords))
-        neg = cubicMean(representativeCopyNumberChanges(outliers, negRecords))
+        pos = cubicMean(i[9] for i in group if i[0] < numOfPositiveDatasets)
+        neg = cubicMean(i[9] for i in group if i[0] >= numOfPositiveDatasets)
         if pos >= 0:
             diff = max(pos - max(neg, 0), 0)
         else:
@@ -170,6 +181,8 @@ if __name__ == "__main__":
     usage = "%prog positive-file(s) [: negative-file(s)]"
     description = "Join and re-rank outputs of tandem-genotypes."
     op = optparse.OptionParser(usage=usage, description=description)
+    op.add_option("-s", "--shrink", action="count", default=0,
+                  help="shrink the output")
     op.add_option("-v", "--verbose", action="count", default=0,
                   help="show more details")
     opts, args = op.parse_args()
