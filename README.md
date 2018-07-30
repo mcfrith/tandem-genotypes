@@ -117,8 +117,30 @@ Points to be careful of:
 
 You can supply tandem repeat locations by any of these files (which
 can be obtained at the [UCSC genome
-database](http://genome.ucsc.edu/)): microsat.txt, simpleRepeat.txt,
-rmsk.txt, RepeatMasker .out.
+database](http://hgdownload.cse.ucsc.edu/downloads.html)):
+simpleRepeat.txt, microsat.txt, rmsk.txt, RepeatMasker .out.
+
+* `simpleRepeat`: repeats with unit length from 1 to >1000.  Made with
+  [Tandem Repeats Finder](http://tandem.bu.edu/trf/trf.html).  
+  Direct links: hg19
+  [simpleRepeat.txt.gz](http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/simpleRepeat.txt.gz),
+  hg38
+  [simpleRepeat.txt.gz](http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/simpleRepeat.txt.gz)
+
+* `microsat`: a subset of `simpleRepeat` with perfect di- and
+  tri-nucleotide repeats.  Not comprehensive, but small and fast to
+  analyze.  
+  Direct links: hg19
+  [microsat.txt.gz](http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/microsat.txt.gz),
+  hg38
+  [microsat.txt.gz](http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/microsat.txt.gz)
+
+* `rmsk`: includes tandem repeats with unit length from 1 to ~13.
+  Made with [RepeatMasker](http://www.repeatmasker.org/).  
+  Direct links: hg19
+  [rmsk.txt.gz](http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz),
+  hg38
+  [rmsk.txt.gz](http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/rmsk.txt.gz)
 
 You can also supply repeats by the first 4 (or more) columns of the
 output format:
