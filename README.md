@@ -15,6 +15,10 @@ convenient directory, and use them as-is.
 
 First, align your sequences as described
 [here](https://github.com/mcfrith/last-rna/blob/master/last-long-reads.md).
+
+* You can use `last-split` `-fMAF`, to reduce the file size, with no
+  effect on `tandem-genotypes`.
+
 Then, do:
 
     tandem-genotypes -g refGene.txt microsat.txt alignments.maf > tg.txt
@@ -68,55 +72,10 @@ like `grep`:
 
     grep "coding" tg.txt | tandem-genotypes-plot - coding.pdf
 
-## Joining and re-ranking `tandem-genotypes` outputs
-
-Suppose you have DNA reads from 1 patient and 2 healthy controls.  You
-can join their `tandem-genotypes` outputs like this:
-
-    tandem-genotypes-join patient.txt : healthy1.txt healthy2.txt > out.txt
-
-Each output line shows: 1 tandem repeat with copy number changes for
-all inputs (in the order that you specified them).
-
-The output lines are in descending order of "importance": large
-changes in the patient are prioritized, and large changes in the
-controls are de-prioritized.
-
-You can run `tandem-genotypes-plot` on this output: it will show the
-first (left-most) dataset.
-
-You can use any number of patients and controls (separated by `:`).
-You can also use concatenated files:
-
-    cat healthy1.txt healthy2.txt > controls.txt
-    tandem-genotypes-join patient.txt : controls.txt > out.txt
-
-## Using a genome instead of reads
-
-You can also find repeat length changes in a genome.  For example, in
-a chimpanzee genome relative to human:
-
-    tandem-genotypes -g refGene.txt microsat.txt hg38-panTro5-1.maf > chimp.txt
-
-These human-chimp alignments are available
-[here](https://github.com/mcfrith/last-genome-alignments).  You could
-use the output as a "healthy control":
-
-    tandem-genotypes-join patient.txt : controls.txt chimp.txt > out.txt
-
-Points to be careful of:
-
-* For `tandem-genotypes-join`, make sure the "reference" genome is the
-  same in all cases.
-
-* `tandem-genotypes` requires that the alignments are in the order
-  produced by `last-split`.  So `hg38-panTro5-2.maf` from the above
-  website won't work.
-
 ## Tandem repeat input
 
 You can supply tandem repeat locations by any of these files (which
-can be obtained at the [UCSC genome
+can be got from the [UCSC genome
 database](http://hgdownload.cse.ucsc.edu/downloads.html)):
 simpleRepeat.txt, microsat.txt, rmsk.txt, RepeatMasker .out.
 
@@ -163,7 +122,76 @@ actual gene name, and the 2nd part is the disease
 You can supply genes in these formats: refGene.txt, refFlat.txt,
 [BED](https://genome.ucsc.edu/FAQ/FAQformat.html#format1).
 
-## Options
+## Joining and re-ranking `tandem-genotypes` outputs
+
+Suppose you have DNA reads from 1 patient and 2 healthy controls.  You
+can join their `tandem-genotypes` outputs like this:
+
+    tandem-genotypes-join patient.txt : healthy1.txt healthy2.txt > out.txt
+
+Each output line shows: 1 tandem repeat with copy number changes for
+all inputs (in the order that you specified them).
+
+The output lines are in descending order of "importance": large
+changes in the patient are prioritized, and large changes in the
+controls are de-prioritized.
+
+You can run `tandem-genotypes-plot` on this output: it will show the
+first (left-most) dataset.
+
+You can use any number of patients and controls (separated by `:`).
+You can also use concatenated files:
+
+    cat healthy1.txt healthy2.txt > controls.txt
+    tandem-genotypes-join patient.txt : controls.txt > out.txt
+
+## Using a genome instead of reads
+
+You can also find repeat length changes in a genome.  For example, in
+a chimpanzee genome relative to human:
+
+    tandem-genotypes -g refGene.txt microsat.txt hg38-panTro5-1.maf > chimp.txt
+
+These human-chimp alignments are available
+[here](https://github.com/mcfrith/last-genome-alignments).  You could
+use the output as a "healthy control":
+
+    tandem-genotypes-join patient.txt : controls.txt chimp.txt > out.txt
+
+Points to be careful of:
+
+* Make sure all files use the same "reference" genome.
+
+* `tandem-genotypes` requires that the alignments are in the order
+  produced by `last-split`.  So `hg38-panTro5-2.maf` from the above
+  website won't work.
+
+## Control files
+
+You can use control files in the `controls` directory:
+
+    tandem-genotypes-join patient.txt : hg38-microsat-control201808.txt > out.txt
+
+Each file has 3 controls:
+
+* PacBio reads from a human (NA12878 / SRR3197748)
+* PromethION reads from a different human (NA19240 / ERR258112-5)
+* A chimp genome (panTro5)
+
+No doubt this will soon be outdated, but it should remain useful, if
+not ideal.
+
+These control files have been shrunk by keeping just one
+representative copy number change per repeat per control, which does
+not affect `tandem-genotypes-join` rankings.  They were made by
+commands like:
+
+    tandem-genotypes-join -ss SRR3197748-rmsk.txt ERR258112-5-rmsk.txt panTro5-rmsk.txt > rmsk-control.txt
+
+One `-s` gets representative copy number changes, and a doubled `-ss`
+also omits gene annotations.
+
+## `tandem-genotypes` options
 
 - `-h`, `--help`: show a help message and exit.
 
