@@ -9,7 +9,8 @@
 on your computer.  To draw histograms, [R](https://www.r-project.org/)
 needs to be installed on your computer.  You can download
 `tandem-genotypes` to your computer, put the programs in any
-convenient directory, and use them as-is.
+convenient directory, and use them as-is.  You can also get
+`tandem-genotypes` from [bioconda](https://bioconda.github.io/).
 
 ## Usage
 

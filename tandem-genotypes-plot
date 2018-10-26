@@ -14,7 +14,7 @@ def myOpen(fileName):
     if fileName == "-":
         return sys.stdin
     if fileName.endswith(".gz"):
-        return gzip.open(fileName)
+        return gzip.open(fileName, "rt")  # xxx dubious for Python2
     return open(fileName)
 
 def changesFromText(text):

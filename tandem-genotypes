@@ -4,7 +4,6 @@
 from __future__ import print_function
 
 import bisect
-import collections
 import functools
 import gzip
 import itertools
@@ -22,7 +21,7 @@ def myOpen(fileName):  # faster than fileinput
     if fileName == "-":
         return sys.stdin
     if fileName.endswith(".gz"):
-        return gzip.open(fileName)
+        return gzip.open(fileName, "rt")  # xxx dubious for Python2
     return open(fileName)
 
 def log(opts, s):
@@ -479,7 +478,7 @@ def doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums):
     queryName = qrySeqName(joinedAlnA[0])
     if len(myJoinedAlns) == 1:
         n = joinedAlnNums[0]
-        if isinstance(gaps[n], collections.Iterator):
+        if not isinstance(gaps[n], list):
             gaps[n] = list(gaps[n])
         appendCopyNumberChange(opts, rep, gaps[n], strand, queryName)
     else:
