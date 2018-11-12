@@ -106,8 +106,8 @@ def tandemGenotypesPlot(opts, args):
     results = readTandemGenotypes(opts, inFiles)
     for res in itertools.islice(results, opts.num):
         chrom, repBeg, repEnd, rep, geneName, genePart = res[:6]
-        fwd = res[7 + 2 * (opts.sample - 1)]
-        rev = res[8 + 2 * (opts.sample - 1)]
+        fwd = res[6 + 2 * (opts.sample - 1)]
+        rev = res[7 + 2 * (opts.sample - 1)]
         geneInfo = " ".join(i for i in (geneName, genePart) if i != ".")
         repInfo = rep if len(rep) < 11 else rep[:8] + "..."
         heading1 = repInfo + ": " + geneInfo if geneInfo else repInfo
