@@ -7,6 +7,7 @@ import bisect
 import functools
 import gzip
 import itertools
+import logging
 import optparse
 import os
 import signal
@@ -17,21 +18,13 @@ try:
 except ImportError:
     pass
 
-def myOpen(fileName):  # faster than fileinput
+def openFile(fileName):
+    logging.info("open file " + fileName)
     if fileName == "-":
         return sys.stdin
     if fileName.endswith(".gz"):
         return gzip.open(fileName, "rt")  # xxx dubious for Python2
     return open(fileName)
-
-def log(opts, s):
-    if opts.verbose:
-        sys.stderr.write(s + "\n")
-
-def openAndLog(opts, fileName):
-    f = myOpen(fileName)
-    log(opts, "reading " + fileName + "...")
-    return f
 
 def isConsecutive(numbers):
     for i, x in enumerate(numbers):
@@ -582,18 +575,21 @@ def changeText(opts, copyNumberChanges):
     return t if t else "."
 
 def tandemGenotypes(opts, args):
+    logLevel = logging.INFO if opts.verbose else logging.WARNING
+    logging.basicConfig(format="%(filename)s: %(message)s", level=logLevel)
+
     geneParts = None
     if opts.genes:
-        geneFile = openAndLog(opts, opts.genes)
+        geneFile = openFile(opts.genes)
         geneParts = sorted(genePartsFromLines(opts, geneFile))
 
-    repFile = openAndLog(opts, args[0])
+    repFile = openFile(args[0])
     tandemRepeats = sorted(tandemRepeatsFromLines(opts, repFile, geneParts))
     maxRepeatLength = maxRangeLength(tandemRepeats)
 
     fileNames = args[1:] if len(args) > 1 else ["-"]
     for i in fileNames:
-        doOneMafFile(opts, tandemRepeats, maxRepeatLength, openAndLog(opts, i))
+        doOneMafFile(opts, tandemRepeats, maxRepeatLength, openFile(i))
 
     # Put the repeats in descending order of a priority score
     # Omit outliers from priority, unless the coverage seems low
