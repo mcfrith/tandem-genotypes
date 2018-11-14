@@ -18,6 +18,12 @@ def myOpen(fileName):
         return gzip.open(fileName, "rt")  # xxx dubious for Python2
     return open(fileName)
 
+def genePartScoresFromLines(lines):
+    for line in lines:
+        fields = line.split()
+        if fields:
+            yield fields[0], float(fields[1])
+
 def complement(x):
     return "TGCA"["ACGT".index(x)]
 
@@ -103,6 +109,8 @@ def scoredJoinedLines(opts, args):
     repeatLengthBoost = 30  # xxx ???
     partScores = {"coding": 50, "5'UTR": 20, "3'UTR": 20, "exon": 15,
                   "promoter": 15, "intron": 5}
+    if opts.scores:
+        partScores.update(genePartScoresFromLines(openFile(opts.scores)))
 
     records = []
     datasetCount = 0
@@ -183,6 +191,8 @@ if __name__ == "__main__":
     op = optparse.OptionParser(usage=usage, description=description)
     op.add_option("-s", "--shrink", action="count", default=0,
                   help="shrink the output")
+    op.add_option("--scores", metavar="FILE",
+                  help="importance scores for gene parts")
     op.add_option("-v", "--verbose", action="count", default=0,
                   help="show more details")
     opts, args = op.parse_args()

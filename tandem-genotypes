@@ -53,6 +53,12 @@ def overlappingRanges(queryRange, sortedRanges, maxSortedRangeLength):
         yield i
         i += 1
 
+def genePartScoresFromLines(lines):
+    for line in lines:
+        fields = line.split()
+        if fields:
+            yield fields[0], float(fields[1])
+
 def getInts(text):
     for i in text.rstrip(",").split(","):
         yield int(i)
@@ -542,10 +548,8 @@ def isBadCodons(seq):
     badCodonSets = glnCodons, alaCodons
     return any(isRepeatedCodonsInAnyFrame6(seq, i) for i in badCodonSets)
 
-def priorityScore(numOfOutliers, tandemRepeat):
+def priorityScore(partScores, numOfOutliers, tandemRepeat):
     repeatLengthBoost = 30  # xxx ???
-    partScores = {"coding": 50, "5'UTR": 20, "3'UTR": 20, "exon": 15,
-                  "promoter": 15, "intron": 5}
     chrom, beg, end, unit, geneInfo, copyNumberChanges = tandemRepeat
     scores = [len(copyNumberChanges)]
     genePart = geneInfo[1]
@@ -578,6 +582,11 @@ def tandemGenotypes(opts, args):
     logLevel = logging.INFO if opts.verbose else logging.WARNING
     logging.basicConfig(format="%(filename)s: %(message)s", level=logLevel)
 
+    partScores = {"coding": 50, "5'UTR": 20, "3'UTR": 20, "exon": 15,
+                  "promoter": 15, "intron": 5}
+    if opts.scores:
+        partScores.update(genePartScoresFromLines(openFile(opts.scores)))
+
     geneParts = None
     if opts.genes:
         geneFile = openFile(opts.genes)
@@ -595,7 +604,7 @@ def tandemGenotypes(opts, args):
     # Omit outliers from priority, unless the coverage seems low
     coverages = [len(i[5]) for i in tandemRepeats if i[5]]
     numOfOutliers = 1 if sum(coverages) >= 3 * len(coverages) else 0  # ?
-    sortKey = functools.partial(priorityScore, numOfOutliers)
+    sortKey = functools.partial(priorityScore, partScores, numOfOutliers)
     tandemRepeats.sort(key=sortKey, reverse=True)
 
     prog = os.path.basename(sys.argv[0])
@@ -635,6 +644,8 @@ if __name__ == "__main__":
                   "count insertions <= BP beyond a repeat (default=%default)")
     op.add_option("--mode", default="L", metavar="LETTER",
                   help="L=lenient, S=strict (default=%default)")
+    op.add_option("--scores", metavar="FILE",
+                  help="importance scores for gene parts")
     op.add_option("-v", "--verbose", action="count", default=0,
                   help="show more details")
     opts, args = op.parse_args()

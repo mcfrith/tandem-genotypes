@@ -19,6 +19,7 @@ Options:
                         (default=100)
   -n BP, --near=BP      count insertions <= BP beyond a repeat (default=60)
   --mode=LETTER         L=lenient, S=strict (default=L)
+  --scores=FILE         importance scores for gene parts
   -v, --verbose         show more details
 
 TEST tandem-genotypes microsat.txt nano.maf
@@ -163,6 +164,7 @@ Join and re-rank outputs of tandem-genotypes.
 Options:
   -h, --help     show this help message and exit
   -s, --shrink   shrink the output
+  --scores=FILE  importance scores for gene parts
   -v, --verbose  show more details
 
 TEST tandem-genotypes-join min.txt : pro.txt ape.txt
