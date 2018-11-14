@@ -110,7 +110,7 @@ def scoredJoinedLines(opts, args):
     partScores = {"coding": 50, "5'UTR": 20, "3'UTR": 20, "exon": 15,
                   "promoter": 15, "intron": 5}
     if opts.scores:
-        partScores.update(genePartScoresFromLines(openFile(opts.scores)))
+        partScores.update(genePartScoresFromLines(myOpen(opts.scores)))
 
     records = []
     datasetCount = 0
