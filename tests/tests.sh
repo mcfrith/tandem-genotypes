@@ -17,6 +17,7 @@ PATH=..:$PATH
     try tandem-genotypes -s2 -v -g refFlat.txt simpleRepeat.txt nano.maf
     try tandem-genotypes -s2 -g refGene.txt rmsk.txt nano.maf
     try tandem-genotypes -s2 -g refFlat.txt rmsk.out nano.maf
+    try tandem-genotypes -s2 -g refFlat.txt tantan.txt nano.maf
     try tandem-genotypes -s0 -g refFlat.txt simpleRepeat.txt nano.maf
     try tandem-genotypes -s1 -g refFlat.txt simpleRepeat.txt nano.maf
     try tandem-genotypes --postmask=0 near-beg.bed near-beg.maf

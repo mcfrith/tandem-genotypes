@@ -138,17 +138,20 @@ def tandemRepeatsFromLines(opts, lines, geneParts):
             continue
         geneInfo = None
         if len(fields) > 3 and len(fields) < 9:  # BED-like
-            if fields[3].isdigit():  # microsat.txt
+            if fields[3].isdigit() and len(fields) < 7:  # microsat.txt
                 fields.pop(0)
-            unit = fields[3]
-            if "x" in unit:
-                repeatCount, unit = unit.split("x")
+            if fields[3].isdigit():  # tantan
+                unit = fields[5]
+            else:
+                unit = fields[3]
+                if "x" in unit:
+                    repeatCount, unit = unit.split("x")
+                if len(fields) > 4:
+                    genePartType = fields[5] if len(fields) > 5 else "."
+                    geneInfo = fields[4], genePartType
             chrom = fields[0]
             beg = int(fields[1])
             end = int(fields[2])
-            if len(fields) > 4:
-                genePartType = fields[5] if len(fields) > 5 else "."
-                geneInfo = fields[4], genePartType
         elif len(fields) == 17 and fields[4] == "trf":  # simpleRepeat.txt
             unit = fields[16]
             if int(fields[5]) != len(unit) or int(fields[7]) != len(unit):
