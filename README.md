@@ -73,6 +73,18 @@ like `grep`:
 
     grep "coding" tg.txt | tandem-genotypes-plot - coding.pdf
 
+### Expected coverage drop for longer repeats
+
+Longer repeats are likely to be fully covered by fewer reads.  You can
+show the expected drop in coverage, for a set of reads (in FASTA or
+FASTQ format):
+
+    tandem-genotypes-plot --reads myseq.fa tg.txt
+
+This shows the expected coverage drop as a gray line (whose absolute
+height is meaningless, only its relative height within each histogram
+is meaningful).
+
 ## Tandem repeat input
 
 You can supply tandem repeat locations by any of these files (which
@@ -101,6 +113,8 @@ simpleRepeat.txt, microsat.txt, rmsk.txt, RepeatMasker .out.
   [rmsk.txt.gz](http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/rmsk.txt.gz),
   hg38
   [rmsk.txt.gz](http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/rmsk.txt.gz)
+
+You can also supply repeats found by `tantan -f4`.
 
 You can also supply repeats by the first 4 (or more) columns of the
 output format:

@@ -18,6 +18,44 @@ def myOpen(fileName):
         return gzip.open(fileName, "rt")  # xxx dubious for Python2
     return open(fileName)
 
+def sequenceLengthsFromFile(lines):
+    seqType = 0
+    for line in lines:
+        if seqType == 0:
+            if line[0] == ">":
+                seqType = 1
+                length = 0
+            elif line[0] == "@":
+                seqType = 2
+                lineType = 1
+        elif seqType == 1:  # fasta
+            if line[0] == ">":
+                yield length
+                length = 0
+            else:
+                length += len(line.rstrip())
+        elif seqType == 2:  # fastq
+            if lineType == 1:
+                yield len(line.rstrip())
+            lineType = (lineType + 1) % 4
+    if seqType == 1:
+        yield length
+
+def expectedCoveragesFromReadLengths(sortedLengths):
+    expCov = 0
+    readCount = 0
+    for length, g in itertools.groupby(reversed(sortedLengths)):
+        if readCount and length + 1 < oldLength:
+            expCov += (oldLength - length - 1) * readCount
+            yield length + 1, expCov
+        readCount += len(list(g))
+        expCov += readCount
+        yield length, expCov
+        oldLength = length
+    if oldLength > 1:
+        expCov += (oldLength - 1) * readCount
+        yield 1, expCov
+
 def changesFromText(text):
     if text != ".":
         for i in text.split(","):
@@ -94,6 +132,11 @@ def tandemGenotypesPlot(opts, args):
         if not outFile.endswith(".pdf"):
             outFile += ".pdf"
         inFiles = args[:-1]
+    if opts.reads:
+        readLengths = sorted(sequenceLengthsFromFile(myOpen(opts.reads)))
+        coveragePoints = sorted(expectedCoveragesFromReadLengths(readLengths))
+        covX, covY = zip(*coveragePoints)
+        maxCovY = max(covY) * 1.0
     r = subprocess.Popen(["R", "--slave", "--vanilla"], stdin=subprocess.PIPE,
                          universal_newlines=True)
     width = opts.cols * 1.75
@@ -109,6 +152,7 @@ def tandemGenotypesPlot(opts, args):
     results = readTandemGenotypes(opts, inFiles)
     for res in itertools.islice(results, opts.num):
         chrom, repBeg, repEnd, rep, geneName, genePart = res[:6]
+        repUnitLen = len(rep)
         fwd = res[6 + 2 * (opts.sample - 1)]
         rev = res[7 + 2 * (opts.sample - 1)]
         geneInfo = " ".join(i for i in (geneName, genePart) if i != ".")
@@ -129,13 +173,24 @@ def tandemGenotypesPlot(opts, args):
         yTics = ticRange(0, maxHeight)
         barWidthPerSpace = 5
         barStepPerHalfSpace = (barWidthPerSpace + 1) * 2
-        barWidth = step * 2 * barWidthPerSpace
-        begTicPos = (barWidthPerSpace + 1) + step
-        xTicPos = [(i - beg) * barStepPerHalfSpace + begTicPos for i in xTics]
+        coordsPerRepUnit = barStepPerHalfSpace * repUnitLen
+        barWidth = repUnitLen * step * 2 * barWidthPerSpace
+        begTicPos = (barWidthPerSpace + 1 + step) * repUnitLen
+        zeroTicPos = begTicPos - beg * coordsPerRepUnit
+        xTicPos = [zeroTicPos + coordsPerRepUnit * i for i in xTics]
         pipe(r, 'f <- ' + rlist(fBars))
         pipe(r, 'r <- ' + rlist(rBars))
         pipe(r, 'barplot(rbind(f,r), {0}, col=c(2,4), border=NA, '
              'ylim=c(0,{1}), axes=FALSE)'.format(barWidth, maxHeight))
+        if opts.reads:
+            minAlignedFlank = max(100, repUnitLen)  # xxx
+            refLen = int(repEnd) - int(repBeg) + 2 * minAlignedFlank
+            zeroPos = zeroTicPos - barStepPerHalfSpace * refLen
+            x = rlist(zeroPos + barStepPerHalfSpace * i for i in covX)
+            y = rlist(format(i * maxHeight / maxCovY, '.3') for i in covY)
+            pipe(r, 'x <- ' + x)
+            pipe(r, 'y <- ' + y)
+            pipe(r, 'lines(x, y, col="gray")')
         pipe(r, 'axis(1, {0}, {1})'.format(rlist(xTicPos), rlist(xTics)))
         pipe(r, 'axis(2, {0})'.format(rlist(yTics)))
         pipe(r, 'mtext("{0}", line=1.5)'.format(heading1))
@@ -156,6 +211,8 @@ if __name__ == "__main__":
                   help="select SAMPLE-th sample to plot (default=%default)")
     op.add_option("--pointsize", default="8", metavar="POINTS",
                   help="text size (default=%default)")
+    op.add_option("--reads", metavar="FILE",
+                  help="show expected coverage for FASTA or FASTQ reads")
     op.add_option("-v", "--verbose", action="count", default=0,
                   help="show more details")
     opts, args = op.parse_args()
