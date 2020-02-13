@@ -105,6 +105,9 @@ def cbrt(x):
 def cubicMean(x):
     return cbrt(average(i ** 3 for i in x if i is not None))
 
+def ordinaryMean(x):
+    return average(i for i in x if i is not None)
+
 def scoredJoinedLines(opts, args):
     repeatLengthBoost = 30  # xxx ???
     partScores = {"coding": 50, "5'UTR": 20, "3'UTR": 20, "exon": 15,
@@ -161,7 +164,8 @@ def scoredJoinedLines(opts, args):
         if opts.shrink < 2:
             geneName, genePart = group[0][5:7]
         changeFields = list(allCopyNumberChangeFields(datasetCount, group))
-        pos = cubicMean(i[9] for i in group if i[0] < numOfPositiveDatasets)
+        posMean = cubicMean if opts.mean == 3 else ordinaryMean
+        pos = posMean(i[9] for i in group if i[0] < numOfPositiveDatasets)
         neg = cubicMean(i[9] for i in group if i[0] >= numOfPositiveDatasets)
         if pos >= 0:
             diff = max(pos - max(neg, 0), 0)
@@ -191,6 +195,9 @@ if __name__ == "__main__":
     op = optparse.OptionParser(usage=usage, description=description)
     op.add_option("-s", "--shrink", action="count", default=0,
                   help="shrink the output")
+    op.add_option("-m", "--mean", type="int", default=1, metavar="NUM",
+                  help="type of mean for positive/patient/case files: "
+                  "1=ordinary, 3=cubic (default=%default)")
     op.add_option("--scores", metavar="FILE",
                   help="importance scores for gene parts")
     op.add_option("-v", "--verbose", action="count", default=0,

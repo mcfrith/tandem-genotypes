@@ -248,6 +248,34 @@ also omits gene annotations.
   DNA read with each copy number change.  `-vv` shows output for all
   repeats, including ones not covered by any DNA read.
 
+## `tandem-genotypes-join` options
+
+- `-h`, `--help`: show a help message and exit.
+
+- `-s`, `--shrink`: shrink the output (see above).
+
+- `-m NUM`, `--mean=NUM`: how to summarize the "importance" across
+  multiple patients of changes in a tandem repeat.  "3" means to use
+  the cubic mean of each patient's importance score: this was the
+  method used before version 1.5.0 and described in the
+  [paper](https://doi.org/10.1186/s13059-019-1667-6).  "1" means to
+  use the ordinary mean: this is now the default.  The importance
+  across controls is always summarized by cubic mean.
+
+- `--scores=FILE`: override importance scores for gene parts, with a
+  file like this:
+
+      coding   50
+      5'UTR    20
+      3'UTR    20
+      exon     15
+      promoter 15
+      intron   5
+
+- `-v`, `--verbose`: prepend to each line: the importance score, the
+  gene part importance score, the importance score from patients, the
+  importance score from controls.
+
 ## Limitations
 
 * `tandem-genotypes` doesn't work for tandem repeats at (or extremely
@@ -258,5 +286,5 @@ also omits gene annotations.
 
 For more details, please see: [Robust detection of tandem repeat
 expansions from long DNA
-reads](https://www.biorxiv.org/content/early/2018/07/24/356931) by S
-Mitsuhashi, MC Frith, et al.
+reads](https://doi.org/10.1186/s13059-019-1667-6) by S Mitsuhashi, MC
+Frith, et al.
