@@ -272,7 +272,7 @@ def alignmentsFromMaf(opts, lines):
             for i in line.split():
                 if i.startswith("mismap="):
                     mismap = float(i[7:])
-        elif line[0] == "s" and mismap <= opts.mismap:
+        elif line[0] == "s":
             fields = line.split()
             seqName = fields[1]
             beg = int(fields[2])
@@ -283,19 +283,20 @@ def alignmentsFromMaf(opts, lines):
             seqData = seqName, seqLen, strand, beg, end, alignedSeq
             alignment.append(seqData)
             if len(alignment) == 2:
-                if opts.postmask:
-                    if not matrices:
-                        if None in (aDel, bDel, aIns, bIns, minScore):
-                            raise Exception("can't read alignment header, "
-                                            "needed for postmasking")
-                        matrices = matrixPerStrand(rowHeads, colHeads,
-                                                   scoreMatrix, bDel, bIns)
-                    columns = zip(alignment[0][5], alignment[1][5])
-                    strand = alignment[strandParam][2]
-                    mat = matrices[strand == "-"]
-                    if not isGoodAlignment(columns, mat, aDel, bDel, minScore):
-                        continue
-                yield alignment
+                if mismap <= opts.mismap:
+                    if opts.postmask:
+                        if not matrices:
+                            if None in (aDel, bDel, aIns, bIns, minScore):
+                                raise Exception("can't read alignment header, "
+                                                "needed for postmasking")
+                            matrices = matrixPerStrand(rowHeads, colHeads,
+                                                       scoreMatrix, bDel, bIns)
+                        cols = zip(alignment[0][5], alignment[1][5])
+                        strand = alignment[strandParam][2]
+                        m = matrices[strand == "-"]
+                        if not isGoodAlignment(cols, m, aDel, bDel, minScore):
+                            continue
+                    yield alignment
 
 def refSeqName(alignment):
     return alignment[0][0]
