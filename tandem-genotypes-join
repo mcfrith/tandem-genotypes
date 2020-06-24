@@ -97,13 +97,16 @@ def average(x):
     y = list(x)
     return 1.0 * sum(y) / max(len(y), 1)
 
-def cbrt(x):
+def cbrt(x):  # xxx a tiny bit inaccurate
     if x >= 0:
         return x ** (1.0 / 3)
     return -((-x) ** (1.0 / 3))
 
 def cubicMean(x):
-    return cbrt(average(i ** 3 for i in x if i is not None))
+    y = [i for i in x if i is not None]
+    if len(y) == 1:  # avoid tiny but confusing inaccuracy of cbrt
+        return 1.0 * y[0]
+    return cbrt(average(i ** 3 for i in y))
 
 def ordinaryMean(x):
     return average(i for i in x if i is not None)

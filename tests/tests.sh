@@ -32,5 +32,4 @@ PATH=..:$PATH
 
     try tandem-genotypes-join --help
     try tandem-genotypes-join min.txt : pro.txt ape.txt
-} 2>&1 |
-diff -u $(basename $0 .sh).out -
+} 2>&1 | diff -u $(basename $0 .sh).out -
