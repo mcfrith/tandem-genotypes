@@ -243,12 +243,13 @@ def isGoodAlignment(columns, scoreMatrix, delOpenCost, insOpenCost, minScore):
     return False
 # End of functions copied from last-postmask
 
-def alignmentsFromMaf(opts, lines):
+def alignmentsFromMaf(opts, readLengths, lines):
     aDel = bDel = aIns = bIns = minScore = matrices = None
     strandParam = 0
     scoreMatrix = []
     rowHeads = []
     colHeads = []
+    oldReadName = ""
     for line in lines:
         if line[0] == "#":
             fields = line.split()
@@ -283,6 +284,9 @@ def alignmentsFromMaf(opts, lines):
             seqData = seqName, seqLen, strand, beg, end, alignedSeq
             alignment.append(seqData)
             if len(alignment) == 2:
+                if seqName != oldReadName:
+                    readLengths.append(seqLen)
+                    oldReadName = seqName
                 if mismap <= opts.mismap:
                     if opts.postmask:
                         if not matrices:
@@ -525,8 +529,8 @@ def doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, alignments):
         joinedAlnNums = list(joinedAlnNumsPerRepeat(repNumsPerJoinedAln, i))
         doOneRepeat(opts, joinedAlns, gaps, rep, joinedAlnNums)
 
-def doOneMafFile(opts, tandemRepeats, maxRepeatLength, lines):
-    alignments = alignmentsFromMaf(opts, lines)
+def doOneMafFile(opts, tandemRepeats, maxRepeatLength, readLengths, lines):
+    alignments = alignmentsFromMaf(opts, readLengths, lines)
     for k, v in itertools.groupby(alignments, qrySeqName):
         doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, v)
 
@@ -600,9 +604,11 @@ def tandemGenotypes(opts, args):
     tandemRepeats = sorted(tandemRepeatsFromLines(opts, repFile, geneParts))
     maxRepeatLength = maxRangeLength(tandemRepeats)
 
+    readLengths = []
     fileNames = args[1:] if len(args) > 1 else ["-"]
     for i in fileNames:
-        doOneMafFile(opts, tandemRepeats, maxRepeatLength, openFile(i))
+        doOneMafFile(opts, tandemRepeats, maxRepeatLength, readLengths,
+                     openFile(i))
 
     # Put the repeats in descending order of a priority score
     # Omit outliers from priority, unless the coverage seems low
