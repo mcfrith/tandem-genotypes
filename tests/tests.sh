@@ -29,6 +29,7 @@ PATH=..:$PATH
     try tandem-genotypes -s2 -p900 -g refFlat.txt simpleRepeat.txt nano.maf
     try tandem-genotypes --postmask=0 ../hg38-disease-tr.txt far.maf
     try "sed 's/chr//' far.maf | tandem-genotypes --postmask=0 far.bed"
+    try tandem-genotypes -o2 -s2 -g refFlat.txt simpleRepeat.txt nano.maf
 
     try tandem-genotypes-join --help
     try tandem-genotypes-join min.txt : pro.txt ape.txt

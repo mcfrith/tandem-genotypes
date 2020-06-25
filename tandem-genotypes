@@ -1,15 +1,15 @@
 #! /usr/bin/env python
 # Copyright 2018 Martin C. Frith
 
-from __future__ import print_function
+from __future__ import division, print_function
 
 import bisect
+import collections
 import functools
 import gzip
 import itertools
 import logging
 import optparse
-import os
 import signal
 import sys
 
@@ -534,6 +534,47 @@ def doOneMafFile(opts, tandemRepeats, maxRepeatLength, readLengths, lines):
     for k, v in itertools.groupby(alignments, qrySeqName):
         doOneQuerySequence(opts, tandemRepeats, maxRepeatLength, v)
 
+def expectedCoverageDataFromReadLengths(sortedReadLengths):
+    readLengthSums = [0 for i in sortedReadLengths]
+    s = 0
+    for i in reversed(range(len(sortedReadLengths))):
+        s += sortedReadLengths[i]
+        readLengthSums[i] = s
+    return sortedReadLengths, readLengthSums
+
+def expectedCoverage(sortedReadLengths, readLengthSums, myLength):
+    i = bisect.bisect_left(sortedReadLengths, myLength)
+    if i == len(sortedReadLengths):
+        return 1
+    return readLengthSums[i] - (myLength - 1) * (len(sortedReadLengths) - i)
+
+def tandemRepeatWithAlleles(expectedCoverageData, tandemRepeat):
+    chrom, beg, end, unit, geneInfo, copyNumberChanges = tandemRepeat
+    changes = sorted(i[1] for i in copyNumberChanges)
+    counts = collections.Counter(changes)
+    numOfReads = len(changes)
+    allele1 = allele2 = "."
+    if numOfReads == 1:
+        allele1 = changes[0]
+    elif len(counts) == 2 and min(counts.values()) * 5 >= numOfReads:  # XXX ?
+        allele1, allele2 = sorted(counts)
+    elif numOfReads > 1:
+        period = len(unit)
+        minAlignedFlank = max(opts.far, period)
+        refLength = end - beg + 2 * minAlignedFlank
+        eCov = [expectedCoverage(*expectedCoverageData, refLength + i * period)
+                for i in changes]
+        inv = [eCov[-1] / i for i in eCov]
+        invSum = sum(inv)
+        for numOfReadsFromSmallAllele, x in enumerate(inv):
+            invSum -= x * 2
+            if invSum < 0:
+                break
+        assert 0 < numOfReadsFromSmallAllele < numOfReads
+        allele1 = changes[numOfReadsFromSmallAllele // 2]
+        allele2 = changes[(numOfReads + numOfReadsFromSmallAllele - 1) // 2]
+    return chrom, beg, end, unit, geneInfo, allele1, allele2, copyNumberChanges
+
 def reverseComplement(seq):
     return "".join(map(complement, reversed(seq)))
 
@@ -558,7 +599,7 @@ def isBadCodons(seq):
 
 def priorityScore(partScores, numOfOutliers, tandemRepeat):
     repeatLengthBoost = 30  # xxx ???
-    chrom, beg, end, unit, geneInfo, copyNumberChanges = tandemRepeat
+    _, beg, end, unit, geneInfo, small, large, copyNumberChanges = tandemRepeat
     scores = [len(copyNumberChanges)]
     genePart = geneInfo[1]
     geneScore = partScores.get(genePart, 1)
@@ -610,22 +651,31 @@ def tandemGenotypes(opts, args):
         doOneMafFile(opts, tandemRepeats, maxRepeatLength, readLengths,
                      openFile(i))
 
+    readLengths.sort()
+    expectedCoverageData = expectedCoverageDataFromReadLengths(readLengths)
+    tandemRepeats = [tandemRepeatWithAlleles(expectedCoverageData, i)
+                     for i in tandemRepeats]
+
     # Put the repeats in descending order of a priority score
     # Omit outliers from priority, unless the coverage seems low
-    coverages = [len(i[5]) for i in tandemRepeats if i[5]]
+    coverages = [len(i[7]) for i in tandemRepeats if i[7]]
     numOfOutliers = 1 if sum(coverages) >= 3 * len(coverages) else 0  # ?
     sortKey = functools.partial(priorityScore, partScores, numOfOutliers)
     tandemRepeats.sort(key=sortKey, reverse=True)
 
-    prog = os.path.basename(sys.argv[0])
+    prog = "tandem-genotypes" if opts.output == 1 else "tandem-genotypes2"
     print("#", prog, " ".join(sys.argv[1:]))
 
-    for chrom, beg, end, unit, geneInfo, copyNumberChanges in tandemRepeats:
+    for tr in tandemRepeats:
+        chrom, beg, end, unit, geneInfo, small, large, copyNumberChanges = tr
         if copyNumberChanges or opts.verbose > 1:
             fwd = (i for i in copyNumberChanges if i[0] != "-")
             rev = (i for i in copyNumberChanges if i[0] == "-")
-            print(chrom, beg, end, unit, geneInfo[0], geneInfo[1],
-                  changeText(opts, fwd), changeText(opts, rev), sep="\t")
+            out = chrom, beg, end, unit, geneInfo[0], geneInfo[1]
+            if opts.output == 2:
+                out += small, large
+            out += changeText(opts, fwd), changeText(opts, rev)
+            print(*out, sep="\t")
 
 if __name__ == "__main__":
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # avoid silly error message
@@ -634,6 +684,8 @@ if __name__ == "__main__":
     op = optparse.OptionParser(usage=usage, description=description)
     op.add_option("-g", "--genes", metavar="FILE",
                   help="read genes from a genePred or BED file")
+    op.add_option("-o", "--output", type="int", default=1, metavar="NUM", help=
+                  "output format: 1=original, 2=alleles (default=%default)")
     op.add_option("-m", "--mismap", type="float", default=1e-6, metavar="PROB",
                   help="ignore any alignment with mismap probability > PROB "
                   "(default=%default)")
