@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Copyright 2018 Martin C. Frith
 
-from __future__ import print_function
+from __future__ import division, print_function
 
 import gzip
 import itertools
@@ -118,6 +118,7 @@ def scoredJoinedLines(opts, args):
     if opts.scores:
         partScores.update(genePartScoresFromLines(myOpen(opts.scores)))
 
+    fieldsPerDataset = 2
     records = []
     datasetCount = 0
     numOfPositiveDatasets = -1
@@ -132,14 +133,14 @@ def scoredJoinedLines(opts, args):
                 datasetCount += datasetsPerChunk
                 datasetsPerChunk = 0
             elif fields:
-                dpc = (len(fields) - 6) // 2
-                if (len(fields) < 6 or len(fields) % 2 or
-                    datasetsPerChunk and datasetsPerChunk != dpc):
+                dpc, mod = divmod(len(fields) - 6, fieldsPerDataset)
+                if dpc < 0 or mod > 0 or datasetsPerChunk not in (0, dpc):
                     raise Exception("bad data in file: " + arg)
                 datasetsPerChunk = dpc
                 for i in range(dpc):
-                    j = 6 + i * 2
-                    r = [datasetCount + i] + fields[:6] + fields[j:j+2]
+                    j = 6 + i * fieldsPerDataset
+                    k = j + fieldsPerDataset
+                    r = [datasetCount + i] + fields[:6] + fields[j:k]
                     records.append(r)
         datasetCount += datasetsPerChunk
     if numOfPositiveDatasets == -1:
