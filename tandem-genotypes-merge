@@ -1,0 +1,135 @@
+#! /usr/bin/env python
+# Author: Martin C. Frith 2020
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+from __future__ import division, print_function
+
+import gzip
+import itertools
+import logging
+import optparse
+import signal
+import subprocess
+import sys
+
+def openFile(fileName):
+    if fileName == "-":
+        return sys.stdin
+    if fileName.endswith(".gz"):
+        return gzip.open(fileName, "rt")  # xxx dubious for Python2
+    return open(fileName)
+
+def fastxInput(lines):
+    s = []
+    for i in lines:
+        if i[0] == ">" and s and s[0][0] == ">" or i[0] == "@" and len(s) == 4:
+            yield s
+            s = []
+        s.append(i)
+    if s:
+        yield s
+
+def getList(text):
+    return [] if text == "." else text.split(",")
+
+def seqGroupsFromFile(opts, lines):
+    seqGroups = []
+    seqNamesToGroupNums = {}
+    records = (i for i in lines if i[0] != "#")
+    for line in itertools.islice(records, opts.num):
+        fields = line.split()
+        groupNameBase = fields[0] + ":" + fields[1] + "-" + fields[2] + ":"
+        allele1, allele2 = fields[6:8]
+        changesAndSeqNames = getList(fields[8]) + getList(fields[9])
+        changesAndSeqNames = [i.split(":") for i in changesAndSeqNames]
+        if allele1 == "." and allele2 == ".":
+            pass
+        elif allele2 == "." or allele1 == allele2:
+            seqGroups.append((groupNameBase + "a", []))
+            for change, name in changesAndSeqNames:
+                seqNamesToGroupNums[name] = len(seqGroups) - 1
+        else:
+            allele1 = int(allele1)
+            allele2 = int(allele2)
+            seqGroups.append((groupNameBase + "a", []))
+            seqGroups.append((groupNameBase + "b", []))
+            for change, name in changesAndSeqNames:
+                c = int(change)
+                offset = 1 if abs(c - allele2) < abs(c - allele1) else 2
+                seqNamesToGroupNums[name] = len(seqGroups) - offset
+    return seqGroups, seqNamesToGroupNums
+
+def main(opts, args):
+    logLevel = logging.INFO if opts.verbose else logging.WARNING
+    logging.basicConfig(format="%(filename)s: %(message)s", level=logLevel)
+
+    infile = args[-1]
+    seqGroups, seqNamesToGroupNums = seqGroupsFromFile(opts, openFile(infile))
+
+    for seqLines in fastxInput(openFile(args[0])):
+        seqName = seqLines[0][1:].split()[0]
+        if seqName in seqNamesToGroupNums:
+            if len(args) == 2:
+                print(*seqLines, sep="", end="")
+                continue
+            groupNum = seqNamesToGroupNums[seqName]
+            groupName, seqs = seqGroups[groupNum]
+            seqs.append(seqLines)
+
+    if len(args) == 2:
+        return
+
+    for groupName, seqs in seqGroups:
+        mergedSequenceName = groupName.replace("group", "merge")
+        cmd = ["lamassemble", "-n" + mergedSequenceName]
+        cmd.append("-g" + str(opts.gap_max))
+        cmd.append("-p" + str(opts.prob))
+        if opts.verbose:
+            cmd.append("-" + "v" * opts.verbose)
+        cmd.append("-P" + str(opts.P))
+        cmd.append("-W" + str(opts.W))
+        cmd.append("-m" + str(opts.m))
+        cmd.append("-z" + str(opts.z))
+        cmd += [args[1], "-"]
+        logging.info(" ".join(cmd))
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
+                                universal_newlines=True)
+        for i in seqs:
+            for j in i:
+                proc.stdin.write(j)
+        proc.stdin.close()
+        proc.wait()
+
+if __name__ == "__main__":
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)  # avoid silly error message
+    usage = """%prog [opts] seqs.fx last-train.out tan-gen.txt > out.fa
+   or: %prog seqs.fx tan-gen.txt > unmerged-sequences.fx"""
+    descr = "Merge DNA sequences of each group into a consensus sequence."
+    op = optparse.OptionParser(usage=usage, description=descr)
+    op.add_option("-n", "--num", type="int", default=16,
+                  help="get the top NUM repeats (default=%default)")
+    op.add_option("-g", "--gap-max", metavar="G", type="float", default=50,
+                  help="use alignment columns with <= G% gaps "
+                  "(default=%default)")
+    op.add_option("-p", "--prob", metavar="P", type="float", default=0.002,
+                  help="use pairwise restrictions with error probability <= P "
+                  "(default=%default)")
+    op.add_option("-v", "--verbose", action="count", default=0,
+                  help="show progress messages")
+
+    og = optparse.OptionGroup(op, "LAST options")
+    og.add_option("-P", type="int", default=1,
+                  help="number of parallel threads (default=%default)")
+    og.add_option("-W", type="int", default=19, help="use minimum positions "
+                  "in length-W windows (default=%default)")
+    og.add_option("-m", type="int", default=5, help=
+                  "max initial matches per query position (default=%default)")
+    og.add_option("-z", type="int", default=30,
+                  help="max gap length (default=%default)")
+    op.add_option_group(og)
+
+    opts, args = op.parse_args()
+    if len(args) in (2, 3):
+        main(opts, args)
+    else:
+        op.print_help()
