@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Copyright 2018 Martin C. Frith
 
-from __future__ import print_function
+from __future__ import division, print_function
 
 import gzip
 import itertools
@@ -63,10 +63,13 @@ def changesFromText(text):
 
 def readTandemGenotypes(opts, fileNames):
     for fileName in fileNames:
+        fpd = 2
         for line in myOpen(fileName):
             fields = line.split()
-            if fields and line[0] != "#":
-                yield fields
+            if line[0] == "#":
+                fpd = 4 if len(fields) > 1 and fields[1][-1] == "2" else 2
+            elif fields:
+                yield fpd, fields
 
 def binsFromSortedValues(values):
     maxBins = 50  # xxx ???
@@ -150,11 +153,11 @@ def tandemGenotypesPlot(opts, args):
     pipe(r, 'par(mgp=c(3, 0.7, 0))')
     pipe(r, 'par(tcl=-0.4)')
     results = readTandemGenotypes(opts, inFiles)
-    for res in itertools.islice(results, opts.num):
+    for fieldsPerDataset, res in itertools.islice(results, opts.num):
         chrom, repBeg, repEnd, rep, geneName, genePart = res[:6]
         repUnitLen = len(rep)
-        fwd = res[6 + 2 * (opts.sample - 1)]
-        rev = res[7 + 2 * (opts.sample - 1)]
+        fwd = res[6 + fieldsPerDataset * opts.sample - 2]
+        rev = res[6 + fieldsPerDataset * opts.sample - 1]
         geneInfo = " ".join(i for i in (geneName, genePart) if i != ".")
         repInfo = rep if len(rep) < 11 else rep[:8] + "..."
         heading1 = repInfo + ": " + geneInfo if geneInfo else repInfo
