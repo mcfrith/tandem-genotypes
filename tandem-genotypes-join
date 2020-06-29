@@ -7,7 +7,6 @@ import gzip
 import itertools
 import operator
 import optparse
-import os
 import signal
 import sys
 
@@ -50,7 +49,7 @@ def isBadCodons(seq):
     return any(isRepeatedCodonsInAnyFrame6(seq, i) for i in badCodonSets)
 
 def allCopyNumberChangeFields(numOfDatasets, group):
-    fieldsRange = range(7, 9)
+    fieldsRange = range(7, len(group[0]) - 1)
     i = 0
     for j in range(numOfDatasets):
         if i < len(group) and group[i][0] == j:
@@ -128,12 +127,18 @@ def scoredJoinedLines(opts, args):
             numOfPositiveDatasets = datasetCount
             continue
         datasetsPerChunk = 0
+        fpd = 2
         for line in myOpen(arg):
             fields = line.split()
             if line[0] == "#":
                 datasetCount += datasetsPerChunk
                 datasetsPerChunk = 0
+                fpd = 4 if len(fields) > 1 and fields[1][-1] == "2" else 2
             elif fields:
+                if fpd != fieldsPerDataset and records:
+                    e = "refusing to mix data with inconsistent header lines"
+                    raise Exception(e)
+                fieldsPerDataset = fpd
                 dpc, mod = divmod(len(fields) - 6, fieldsPerDataset)
                 if dpc < 0 or mod > 0 or datasetsPerChunk not in (0, dpc):
                     raise Exception("bad data in file: " + arg)
@@ -158,6 +163,9 @@ def scoredJoinedLines(opts, args):
             if rep is not None:
                 r[fieldNum] = str(rep)
         r.append(rep)
+
+    prog = "tandem-genotypes-join" + ("", "2")[fieldsPerDataset == 4]
+    print("#", prog, *sys.argv[1:])
 
     records.sort(key=operator.itemgetter(1, 2, 3, 4))  # stable
     for k, v in itertools.groupby(records, operator.itemgetter(1, 2, 3, 4)):
@@ -185,7 +193,6 @@ def scoredJoinedLines(opts, args):
         yield -jointScore, fields, (geneScore, pos, neg)
 
 def tandemGenotypesJoin(opts, args):
-    print("#", os.path.basename(sys.argv[0]), *sys.argv[1:])
     for jointScore, fields, info in sorted(scoredJoinedLines(opts, args)):
         if opts.verbose:
             t = "{0:.3g}\t{1}\t{2:.9g}\t{3:.9g}".format(-jointScore, *info)
