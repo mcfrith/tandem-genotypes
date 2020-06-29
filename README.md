@@ -85,6 +85,33 @@ This shows the expected coverage drop as a gray line (whose absolute
 height is meaningless, only its relative height within each histogram
 is meaningful).
 
+## Crude allele prediction
+
+You can predict 2 alleles per repeat, with option `-o2`:
+
+    tandem-genotypes -o2 -g refGene.txt microsat.txt alignments.maf > tg2.txt
+
+This adds 2 extra columns to the output, with predicted copy number
+change per allele.  These predictions are crude.  If there is really 1
+allele (homozygous), but the DNA reads vary due to sequencing errors,
+probably 2 close alleles will be predicted.  The possibility of strand
+bias is not taken into account.
+
+## Merging allele reads into a consensus sequence
+
+You can extract the DNA reads of each allele, and merge them into a
+consensus sequence, like this:
+
+    tandem-genotypes-merge reads.fq myseq.par tg2.txt > merged.fa
+
+This uses 3 input files: the read sequences (in fastq or fasta
+format), `myseq.par` from the alignment step, and the
+`tandem-genotypes` output file.  You must first run `tandem-genotypes`
+with option `-o2` (to predict alleles) and option `-v` (to show read
+names).  This merging requires [lamassemble][] to be installed on your
+computer.  Run `tandem-genotypes-merge --help` to see the options
+(most of which are described at the [lamassemble][] site).
+
 ## Tandem repeat input
 
 You can supply tandem repeat locations by any of these files (which
@@ -212,6 +239,9 @@ also omits gene annotations.
 
 - `-g FILE`, `--genes=FILE`: read genes from a genePred or BED file.
 
+- `-o NUM`, `--output=NUM`: output format: 1=original, 2=alleles
+  (default=1).
+
 - `-m PROB`, `--mismap=PROB`: ignore any alignment with mismap
   probability > `PROB` (default=1e-6).
 
@@ -288,3 +318,5 @@ For more details, please see: [Robust detection of tandem repeat
 expansions from long DNA
 reads](https://doi.org/10.1186/s13059-019-1667-6) by S Mitsuhashi, MC
 Frith, et al.
+
+[lamassemble]: https://gitlab.com/mcfrith/lamassemble
