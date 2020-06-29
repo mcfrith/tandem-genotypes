@@ -50,17 +50,18 @@ def isBadCodons(seq):
     return any(isRepeatedCodonsInAnyFrame6(seq, i) for i in badCodonSets)
 
 def allCopyNumberChangeFields(numOfDatasets, group):
+    fieldsRange = range(7, 9)
     i = 0
     for j in range(numOfDatasets):
         if i < len(group) and group[i][0] == j:
-            yield group[i][7]
-            yield group[i][8]
+            for k in fieldsRange:
+                yield group[i][k]
             i += 1
             if i < len(group) and group[i][0] == j:
                 raise Exception("duplicate repeat in dataset " + str(j))
         else:
-            yield "."
-            yield "."
+            for k in fieldsRange:
+                yield "."
 
 def coverageFromText(text):
     return 0 if text == "." else text.count(",") + 1
@@ -68,7 +69,7 @@ def coverageFromText(text):
 def numOfOutliersToIgnore(dataset):
     total = count = 0
     for i in dataset:
-        coverage = coverageFromText(i[7]) + coverageFromText(i[8])
+        coverage = coverageFromText(i[-2]) + coverageFromText(i[-1])
         total += coverage
         count += (coverage > 0)
     return 1 if total >= 3 * count else 0
@@ -82,8 +83,8 @@ def copyNumberChangesFromText(record, fieldNum):
             yield int(i), fieldNum
 
 def representativeCopyNumberChange(record, numOfOutliers):
-    c = sorted(itertools.chain(copyNumberChangesFromText(record, 7),
-                               copyNumberChangesFromText(record, 8)))
+    c = sorted(itertools.chain(copyNumberChangesFromText(record, -2),
+                               copyNumberChangesFromText(record, -1)))
     for i in range(numOfOutliers):
         if c and c[-1][0] > 0:
             c.pop()  # discard the most extreme expansion
@@ -152,25 +153,25 @@ def scoredJoinedLines(opts, args):
 
     for r in records:
         rep, fieldNum = representativeCopyNumberChange(r, outliers[r[0]])
-        r.append(rep)
         if opts.shrink:
-            r[7] = r[8] = "."
+            r[-2] = r[-1] = "."
             if rep is not None:
                 r[fieldNum] = str(rep)
+        r.append(rep)
 
     records.sort(key=operator.itemgetter(1, 2, 3, 4))  # stable
     for k, v in itertools.groupby(records, operator.itemgetter(1, 2, 3, 4)):
         chrom, beg, end, unit = k
         group = list(v)
-        if opts.shrink and all(i[9] is None for i in group):
+        if opts.shrink and all(i[-1] is None for i in group):
             continue
         geneName = genePart = "."
         if opts.shrink < 2:
             geneName, genePart = group[0][5:7]
         changeFields = list(allCopyNumberChangeFields(datasetCount, group))
         posMean = cubicMean if opts.mean == 3 else ordinaryMean
-        pos = posMean(i[9] for i in group if i[0] < numOfPositiveDatasets)
-        neg = cubicMean(i[9] for i in group if i[0] >= numOfPositiveDatasets)
+        pos = posMean(i[-1] for i in group if i[0] < numOfPositiveDatasets)
+        neg = cubicMean(i[-1] for i in group if i[0] >= numOfPositiveDatasets)
         if pos >= 0:
             diff = max(pos - max(neg, 0), 0)
         else:
