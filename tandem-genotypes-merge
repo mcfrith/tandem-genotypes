@@ -4,6 +4,7 @@
 
 from __future__ import division, print_function
 
+import collections
 import gzip
 import itertools
 import logging
@@ -34,7 +35,7 @@ def getList(text):
 
 def seqGroupsFromFile(opts, lines):
     seqGroups = []
-    seqNamesToGroupNums = {}
+    seqNamesToGroupNums = collections.defaultdict(list)
     records = (i for i in lines if i[0] != "#")
     for line in itertools.islice(records, opts.num):
         fields = line.split()
@@ -47,7 +48,7 @@ def seqGroupsFromFile(opts, lines):
         elif allele2 == "." or allele1 == allele2:
             seqGroups.append((groupNameBase + "a", []))
             for change, name in changesAndSeqNames:
-                seqNamesToGroupNums[name] = len(seqGroups) - 1
+                seqNamesToGroupNums[name].append(len(seqGroups) - 1)
         else:
             allele1 = int(allele1)
             allele2 = int(allele2)
@@ -56,7 +57,7 @@ def seqGroupsFromFile(opts, lines):
             for change, name in changesAndSeqNames:
                 c = int(change)
                 offset = 1 if abs(c - allele2) < abs(c - allele1) else 2
-                seqNamesToGroupNums[name] = len(seqGroups) - offset
+                seqNamesToGroupNums[name].append(len(seqGroups) - offset)
     return seqGroups, seqNamesToGroupNums
 
 def main(opts, args):
@@ -72,9 +73,9 @@ def main(opts, args):
             if len(args) == 2:
                 print(*seqLines, sep="", end="")
                 continue
-            groupNum = seqNamesToGroupNums[seqName]
-            groupName, seqs = seqGroups[groupNum]
-            seqs.append(seqLines)
+            for groupNum in seqNamesToGroupNums[seqName]:
+                groupName, seqs = seqGroups[groupNum]
+                seqs.append(seqLines)
 
     if len(args) == 2:
         return
