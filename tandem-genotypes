@@ -9,6 +9,7 @@ import functools
 import gzip
 import itertools
 import logging
+import math
 import optparse
 import signal
 import sys
@@ -551,28 +552,27 @@ def expectedCoverage(sortedReadLengths, readLengthSums, myLength):
 def tandemRepeatWithAlleles(expectedCoverageData, tandemRepeat):
     chrom, beg, end, unit, geneInfo, copyNumberChanges = tandemRepeat
     changes = sorted(i[1] for i in copyNumberChanges)
-    counts = collections.Counter(changes)
     numOfReads = len(changes)
     allele1 = allele2 = "."
     if numOfReads == 1:
         allele1 = changes[0]
-    elif len(counts) == 2 and min(counts.values()) * 5 >= numOfReads:  # XXX ?
-        allele1, allele2 = sorted(counts)
     elif numOfReads > 1:
-        period = len(unit)
-        minAlignedFlank = max(opts.far, period)
-        refLength = end - beg + 2 * minAlignedFlank
-        eCov = [expectedCoverage(*expectedCoverageData, refLength + i * period)
-                for i in changes]
-        inv = [eCov[-1] / i for i in eCov]
-        invSum = sum(inv)
-        for numOfReadsFromSmallAllele, x in enumerate(inv):
-            invSum -= x * 2
-            if invSum < 0:
-                break
-        assert 0 < numOfReadsFromSmallAllele < numOfReads
-        allele1 = changes[numOfReadsFromSmallAllele // 2]
-        allele2 = changes[(numOfReads + numOfReadsFromSmallAllele - 1) // 2]
+        trim = int(math.sqrt(numOfReads) / 3)  # xxx ???
+        trimEnd = numOfReads - trim
+        trimmedChanges = changes[trim:trimEnd]
+        counts = collections.Counter(trimmedChanges)
+        uniqueTrimmedChanges = sorted(counts)
+        # k-medoids clustering with k=2:
+        distBest = sys.maxsize
+        for j, y in enumerate(uniqueTrimmedChanges):
+            for i in range(j + 1):
+                x = uniqueTrimmedChanges[i]
+                dist = sum(v * min(abs(k - x), abs(k - y))
+                           for k, v in counts.items())
+                if dist < distBest:
+                    distBest = dist
+                    allele1 = x
+                    allele2 = y
     return chrom, beg, end, unit, geneInfo, allele1, allele2, copyNumberChanges
 
 def reverseComplement(seq):
