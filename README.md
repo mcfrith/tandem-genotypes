@@ -99,8 +99,8 @@ bias is not taken into account.
 
 ## Merging allele reads into a consensus sequence
 
-You can extract the DNA reads of each allele, and merge them into a
-consensus sequence, like this:
+You can extract the DNA reads of each allele (for the top 16 repeats
+by default), and merge them into a consensus sequence, like this:
 
     tandem-genotypes-merge reads.fq myseq.par tg2.txt > merged.fa
 
