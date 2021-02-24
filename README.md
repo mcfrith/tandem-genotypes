@@ -16,10 +16,6 @@ convenient directory, and use them as-is.  You can also get
 
 First, align your sequences as described
 [here](https://github.com/mcfrith/last-rna/blob/master/last-long-reads.md).
-
-* You can use `last-split` `-fMAF`, to reduce the file size, with no
-  effect on `tandem-genotypes`.
-
 Then, do:
 
     tandem-genotypes -g refGene.txt microsat.txt alignments.maf > tg.txt
@@ -247,7 +243,7 @@ also omits gene annotations.
 
 - `--postmask=NUMBER`: by default, `tandem-genotypes` ignores
   mostly-lowercase alignments (using the method of
-  [`last-postmask`](http://last.cbrc.jp/doc/last-postmask.html)).
+  [`last-postmask`](https://gitlab.com/mcfrith/last/-/blob/main/doc/last-postmask.rst)).
   This is because lowercase indicates repetitive sequence, and
   alignments without a significant amount of non-repetitive sequence
   are less reliable.  You can turn this off with `--postmask=0`.
