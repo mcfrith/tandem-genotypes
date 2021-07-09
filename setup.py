@@ -33,6 +33,7 @@ setup(
     scripts=[
         "tandem-genotypes",
         "tandem-genotypes-join",
+        "tandem-genotypes-merge",
         "tandem-genotypes-plot",
     ],
 )
