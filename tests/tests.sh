@@ -34,4 +34,7 @@ PATH=..:$PATH
     try tandem-genotypes-join --help
     try tandem-genotypes-join min.txt : pro.txt ape.txt
     try tandem-genotypes-join -ss min.txt : pro.txt ape.txt
-} 2>&1 | diff -u $(basename $0 .sh).out -
+    try tandem-genotypes-join nano.txt : min.txt
+    try tandem-genotypes-join -c1 nano.txt
+    try tandem-genotypes-join -c2 nano.txt
+} 2>&1 | diff -u tests.out -

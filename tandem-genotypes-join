@@ -163,6 +163,17 @@ def scoredJoinedLines(opts, args):
             r[-2] = r[-1] = "."
             if rep is not None:
                 r[fieldNum] = str(rep)
+        if opts.change != 0 and rep is not None:
+            if len(r) < 11:
+                raise RuntimeError("input lacks alleles")
+            alleles = r[7:9]
+            if "." in alleles:
+                if opts.change == 2:
+                    rep = None
+            else:
+                func = max if opts.change == 1 else min
+                chosenAllele = func(map(int, alleles), key=abs)
+                rep = min(rep, chosenAllele, key=abs)
         r.append(rep)
 
     prog = "tandem-genotypes-join" + "2" * hasAllAlleles
@@ -206,6 +217,10 @@ if __name__ == "__main__":
     usage = "%prog positive-file(s) [: negative-file(s)]"
     description = "Join and re-rank outputs of tandem-genotypes."
     op = optparse.OptionParser(usage=usage, description=description)
+    op.add_option("-c", "--change", type="int", default=0, metavar="N", help=
+                  "get importance from: most-changed non-outlier read (0), "
+                  "most-changed allele (1), least-changed allele (2) "
+                  "(default=%default)")
     op.add_option("-s", "--shrink", action="count", default=0,
                   help="shrink the output")
     op.add_option("-m", "--mean", type="int", default=1, metavar="NUM",

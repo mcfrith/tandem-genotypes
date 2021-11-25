@@ -278,15 +278,27 @@ also omits gene annotations.
 
 - `-h`, `--help`: show a help message and exit.
 
+- `-c N`, `--change=N`: which size change to use for "importance" of
+  each tandem repeat, for each patient or control.
+
+    * "0" means to use the most-changed DNA read.  To avoid outliers:
+      if the average number of reads covering each repeat (for repeats
+      with at least 1 read) is &ge; 3, the most extreme expansion and
+      contraction per repeat are ignored.  This is the method
+      described in the [paper][].
+    * "1" means to use the most-changed allele.  But if this would
+      have greater magnitude than the "0" change, use the "0" change.
+    * "2" means to use the least-changed allele.  But if this would
+      have greater magnitude than the "0" change, use the "0" change.
+
 - `-s`, `--shrink`: shrink the output (see above).
 
 - `-m NUM`, `--mean=NUM`: how to summarize the "importance" across
   multiple patients of changes in a tandem repeat.  "3" means to use
   the cubic mean of each patient's importance score: this was the
-  method used before version 1.5.0 and described in the
-  [paper](https://doi.org/10.1186/s13059-019-1667-6).  "1" means to
-  use the ordinary mean: this is now the default.  The importance
-  across controls is always summarized by cubic mean.
+  method used before version 1.5.0 and described in the [paper][].
+  "1" means to use the ordinary mean: this is now the default.  The
+  importance across controls is always summarized by cubic mean.
 
 - `--scores=FILE`: override importance scores for gene parts, with a
   file like this:
@@ -311,8 +323,8 @@ also omits gene annotations.
 ## Paper
 
 For more details, please see: [Robust detection of tandem repeat
-expansions from long DNA
-reads](https://doi.org/10.1186/s13059-019-1667-6) by S Mitsuhashi, MC
-Frith, et al.
+expansions from long DNA reads][paper] by S Mitsuhashi, MC Frith, et
+al.
 
 [lamassemble]: https://gitlab.com/mcfrith/lamassemble
+[paper]: https://doi.org/10.1186/s13059-019-1667-6
