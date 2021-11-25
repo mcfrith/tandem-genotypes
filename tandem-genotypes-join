@@ -7,6 +7,7 @@ import gzip
 import itertools
 import operator
 import optparse
+import os
 import signal
 import sys
 
@@ -59,7 +60,7 @@ def allDatasetFields(numOfDatasets, hasAllAlleles, group):
                 yield group[i][k]
             i += 1
             if i < len(group) and group[i][0] == j:
-                raise Exception("duplicate repeat in dataset " + str(j))
+                raise RuntimeError("duplicate repeat in dataset " + str(j))
         else:
             for k in fieldsRange:
                 yield "."
@@ -141,7 +142,7 @@ def scoredJoinedLines(opts, args):
                 fieldsPerDataset = 4 if hasAlleles else 2
                 dpc, mod = divmod(len(fields) - 6, fieldsPerDataset)
                 if dpc < 0 or mod > 0 or datasetsPerChunk not in (0, dpc):
-                    raise Exception("bad data in file: " + arg)
+                    raise RuntimeError("bad data in file: " + arg)
                 datasetsPerChunk = dpc
                 for i in range(dpc):
                     j = 6 + i * fieldsPerDataset
@@ -216,6 +217,10 @@ if __name__ == "__main__":
                   help="show more details")
     opts, args = op.parse_args()
     if args:
-        tandemGenotypesJoin(opts, args)
+        try:
+            tandemGenotypesJoin(opts, args)
+        except RuntimeError as e:
+            prog = os.path.basename(sys.argv[0])
+            sys.exit(prog + ": error: " + str(e))
     else:
         op.print_help()

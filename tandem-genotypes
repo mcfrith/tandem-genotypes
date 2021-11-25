@@ -11,6 +11,7 @@ import itertools
 import logging
 import math
 import optparse
+import os
 import signal
 import sys
 
@@ -252,6 +253,7 @@ def alignmentsFromMaf(opts, lines):
     scoreMatrix = []
     rowHeads = []
     colHeads = []
+    headerErrorText = "can't read alignment header, needed for postmasking"
     for line in lines:
         if line[0] == "#":
             fields = line.split()
@@ -290,8 +292,7 @@ def alignmentsFromMaf(opts, lines):
                     if opts.postmask:
                         if not matrices:
                             if None in (aDel, bDel, aIns, bIns, minScore):
-                                raise Exception("can't read alignment header, "
-                                                "needed for postmasking")
+                                raise RuntimeError(headerErrorText)
                             matrices = matrixPerStrand(rowHeads, colHeads,
                                                        scoreMatrix, bDel, bIns)
                         cols = zip(alignment[0][5], alignment[1][5])
@@ -340,7 +341,7 @@ def isColinear(colinearAlignments, newAln):
     if qryFwdBeg(oldAln) > qryFwdBeg(newAln):
         # We could sort the alignments into the right order.  But
         # wrong order is unexpected, and may indicate other problems.
-        raise Exception("the alignments are in the wrong order")
+        raise RuntimeError("the alignments are in the wrong order")
     if any(i[:3] != j[:3] for i, j in zip(oldAln, newAln)):
         return False
     if len(colinearAlignments) == 1:
@@ -692,4 +693,8 @@ if __name__ == "__main__":
     opts, args = op.parse_args()
     if not args:
         op.error("please give me repeats and MAF alignments")
-    tandemGenotypes(opts, args)
+    try:
+        tandemGenotypes(opts, args)
+    except RuntimeError as e:
+        prog = os.path.basename(sys.argv[0])
+        sys.exit(prog + ": error: " + str(e))
