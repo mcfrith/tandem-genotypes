@@ -1,3 +1,2 @@
 setup.py export-subst
 controls/ export-ignore
-tests/ export-ignore
