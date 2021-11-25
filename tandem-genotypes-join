@@ -48,8 +48,9 @@ def isBadCodons(seq):
     badCodonSets = glnCodons, alaCodons
     return any(isRepeatedCodonsInAnyFrame6(seq, i) for i in badCodonSets)
 
-def allCopyNumberChangeFields(numOfDatasets, group):
-    fieldsRange = range(7, len(group[0]) - 1)
+def allDatasetFields(numOfDatasets, group):
+    fieldsEnd = len(group[0]) - 1
+    fieldsRange = range(7, fieldsEnd)
     i = 0
     for j in range(numOfDatasets):
         if i < len(group) and group[i][0] == j:
@@ -133,7 +134,8 @@ def scoredJoinedLines(opts, args):
             if line[0] == "#":
                 datasetCount += datasetsPerChunk
                 datasetsPerChunk = 0
-                fpd = 4 if len(fields) > 1 and fields[1][-1] == "2" else 2
+                hasAlleles = len(fields) > 1 and fields[1][-1] == "2"
+                fpd = 4 if hasAlleles else 2
             elif fields:
                 if fpd != fieldsPerDataset and records:
                     e = "refusing to mix data with inconsistent header lines"
@@ -176,7 +178,7 @@ def scoredJoinedLines(opts, args):
         geneName = genePart = "."
         if opts.shrink < 2:
             geneName, genePart = group[0][5:7]
-        changeFields = list(allCopyNumberChangeFields(datasetCount, group))
+        dataFields = list(allDatasetFields(datasetCount, group))
         posMean = cubicMean if opts.mean == 3 else ordinaryMean
         pos = posMean(i[-1] for i in group if i[0] < numOfPositiveDatasets)
         neg = cubicMean(i[-1] for i in group if i[0] >= numOfPositiveDatasets)
@@ -189,7 +191,7 @@ def scoredJoinedLines(opts, args):
             geneScore *= 2
         mul = geneScore * len(unit)
         jointScore = mul * diff / (int(end) - int(beg) + repeatLengthBoost)
-        fields = [chrom, beg, end, unit, geneName, genePart] + changeFields
+        fields = [chrom, beg, end, unit, geneName, genePart] + dataFields
         yield -jointScore, fields, (geneScore, pos, neg)
 
 def tandemGenotypesJoin(opts, args):
