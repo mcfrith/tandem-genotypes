@@ -175,6 +175,8 @@ def tandemRepeatsFromLines(opts, lines, geneParts):
             end = int(fields[6])
         else:
             continue
+        if not unit.isalpha():
+            raise RuntimeError("can't read the tandem repeat file")
         if len(unit) < opts.min_unit:
             continue
         if opts.min_unit > 1 and len(set(unit)) == 1:  # idiot-proofing

@@ -137,7 +137,7 @@ simpleRepeat.txt, microsat.txt, rmsk.txt, RepeatMasker .out.
   hg38
   [rmsk.txt.gz](http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/rmsk.txt.gz)
 
-You can also supply repeats found by `tantan -f4`.
+You can also supply repeats found by [tantan][] `-f4`.
 
 You can also supply repeats by the first 4 (or more) columns of the
 output format:
@@ -328,3 +328,4 @@ al.
 
 [lamassemble]: https://gitlab.com/mcfrith/lamassemble
 [paper]: https://doi.org/10.1186/s13059-019-1667-6
+[tantan]: https://gitlab.com/mcfrith/tantan
